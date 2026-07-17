@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime
 import os
+import json
 
 Base = declarative_base()
 
@@ -41,27 +42,28 @@ impact_policies = Table(
     Column('policy_id', Integer, ForeignKey('policies.id'), primary_key=True)
 )
 
-class Project(Base):
-    __tablename__ = 'projects'
+class ProjectMetadata(Base):
+    """Stores project metadata within the project workspace database"""
+    __tablename__ = 'project_metadata'
     
     id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False)
+    project_name = Column(String(255), nullable=False)
+    client_name = Column(String(255))
+    program_name = Column(String(255))
     description = Column(Text)
     sponsor = Column(String(255))
     change_manager = Column(String(255))
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     status = Column(String(50), default='Active')
+    registry_version = Column(String(50), default='1.0')
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    impacts = relationship('Impact', back_populates='project', cascade='all, delete-orphan')
 
 class Impact(Base):
     __tablename__ = 'impacts'
     
     id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
     impact_number = Column(String(50))
     title = Column(String(255))
     description = Column(Text, nullable=False)
@@ -77,7 +79,6 @@ class Impact(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    project = relationship('Project', back_populates='impacts')
     stakeholder_groups = relationship('StakeholderGroup', secondary=impact_stakeholder_groups, back_populates='impacts')
     organization_units = relationship('OrganizationUnit', secondary=impact_organization_units, back_populates='impacts')
     business_processes = relationship('BusinessProcess', secondary=impact_business_processes, back_populates='impacts')
@@ -90,7 +91,6 @@ class StakeholderGroup(Base):
     __tablename__ = 'stakeholder_groups'
     
     id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     size = Column(Integer)
@@ -105,7 +105,6 @@ class OrganizationUnit(Base):
     __tablename__ = 'organization_units'
     
     id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     parent_unit = Column(String(255))
@@ -120,7 +119,6 @@ class BusinessProcess(Base):
     __tablename__ = 'business_processes'
     
     id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     process_owner = Column(String(255))
@@ -135,7 +133,6 @@ class System(Base):
     __tablename__ = 'systems'
     
     id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     system_owner = Column(String(255))
@@ -151,7 +148,6 @@ class Policy(Base):
     __tablename__ = 'policies'
     
     id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     policy_owner = Column(String(255))
@@ -188,15 +184,90 @@ class ChangeAsset(Base):
     
     impact = relationship('Impact', back_populates='change_assets')
 
-def get_engine(db_path='database/sqlite.db'):
+def get_project_path(project_name):
+    """Get the file path for a project workspace"""
+    safe_name = "".join(c for c in project_name if c.isalnum() or c in (' ', '-', '_')).strip()
+    safe_name = safe_name.replace(' ', '_')
+    return f'projects/{safe_name}.irp'
+
+def get_engine(project_name=None):
+    """Get database engine for a specific project workspace"""
+    if project_name is None:
+        # Fallback for legacy code
+        db_path = 'database/sqlite.db'
+    else:
+        db_path = get_project_path(project_name)
+    
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     return create_engine(f'sqlite:///{db_path}', echo=False)
 
-def init_db(db_path='database/sqlite.db'):
-    engine = get_engine(db_path)
+def init_db(project_name=None):
+    """Initialize database for a project workspace"""
+    engine = get_engine(project_name)
     Base.metadata.create_all(engine)
     return engine
 
 def get_session(engine):
+    """Get database session"""
     Session = sessionmaker(bind=engine)
     return Session()
+
+def list_projects():
+    """List all available project workspaces"""
+    projects_dir = 'projects'
+    if not os.path.exists(projects_dir):
+        return []
+    
+    projects = []
+    for filename in os.listdir(projects_dir):
+        if filename.endswith('.irp'):
+            project_name = filename[:-4].replace('_', ' ')
+            file_path = os.path.join(projects_dir, filename)
+            stat = os.stat(file_path)
+            projects.append({
+                'name': project_name,
+                'filename': filename,
+                'path': file_path,
+                'size': stat.st_size,
+                'modified': datetime.fromtimestamp(stat.st_mtime)
+            })
+    
+    return sorted(projects, key=lambda x: x['modified'], reverse=True)
+
+def get_recent_projects(max_count=5):
+    """Get recently modified projects"""
+    all_projects = list_projects()
+    return all_projects[:max_count]
+
+def archive_project(project_name):
+    """Move project to archives folder"""
+    source = get_project_path(project_name)
+    if not os.path.exists(source):
+        return False
+    
+    os.makedirs('archives', exist_ok=True)
+    safe_name = "".join(c for c in project_name if c.isalnum() or c in (' ', '-', '_')).strip()
+    safe_name = safe_name.replace(' ', '_')
+    dest = f'archives/{safe_name}.irp'
+    
+    import shutil
+    shutil.move(source, dest)
+    return True
+
+def delete_project(project_name):
+    """Delete a project workspace"""
+    project_path = get_project_path(project_name)
+    if os.path.exists(project_path):
+        os.remove(project_path)
+        return True
+    return False
+
+def export_project(project_name, export_path):
+    """Export project to a specified location"""
+    source = get_project_path(project_name)
+    if not os.path.exists(source):
+        return False
+    
+    import shutil
+    shutil.copy2(source, export_path)
+    return True

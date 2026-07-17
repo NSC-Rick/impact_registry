@@ -5,7 +5,6 @@ from typing import Optional, List
 @dataclass
 class ImpactDTO:
     id: Optional[int] = None
-    project_id: Optional[int] = None
     impact_number: str = ""
     title: str = ""
     description: str = ""
@@ -32,7 +31,6 @@ class ImpactDTO:
             return None
         return cls(
             id=orm_obj.id,
-            project_id=orm_obj.project_id,
             impact_number=orm_obj.impact_number,
             title=orm_obj.title or "",
             description=orm_obj.description,
