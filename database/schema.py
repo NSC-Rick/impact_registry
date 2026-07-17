@@ -47,6 +47,7 @@ class ProjectMetadata(Base):
     __tablename__ = 'project_metadata'
     
     id = Column(Integer, primary_key=True)
+    project_uuid = Column(String(36), unique=True)  # UUID for project identity
     project_name = Column(String(255), nullable=False)
     client_name = Column(String(255))
     program_name = Column(String(255))
@@ -55,7 +56,7 @@ class ProjectMetadata(Base):
     change_manager = Column(String(255))
     start_date = Column(DateTime)
     end_date = Column(DateTime)
-    status = Column(String(50), default='Active')
+    status = Column(String(50), default='Pre-Implementation')  # Updated default
     registry_version = Column(String(50), default='1.0')
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

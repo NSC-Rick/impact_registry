@@ -1,7 +1,10 @@
 import streamlit as st
-from database.schema import init_db, get_session, get_engine, list_projects, get_recent_projects, ProjectMetadata
 from datetime import datetime
 import os
+
+from database.schema import get_session, get_engine, ProjectMetadata
+from services.workspace_service import WorkspaceService
+from services.project_context import ProjectContext
 
 st.set_page_config(
     page_title="Impact Registry - Project Workspace",
@@ -13,10 +16,15 @@ st.set_page_config(
 st.title("🎯 Impact Registry")
 st.markdown("### Project Workspace Management")
 
-if 'current_project' not in st.session_state:
-    st.session_state['current_project'] = None
+# Initialize workspace service
+workspace = WorkspaceService()
 
-if st.session_state['current_project'] is None:
+# Discover projects on startup
+if 'projects_discovered' not in st.session_state:
+    workspace.discover_projects()
+    st.session_state['projects_discovered'] = True
+
+if not ProjectContext.has_active_project():
     st.markdown("---")
     
     col1, col2 = st.columns([2, 1])
@@ -48,24 +56,32 @@ if st.session_state['current_project'] is None:
     with tab1:
         st.markdown("### Recent Projects")
         
-        recent_projects = get_recent_projects(max_count=10)
+        recent_projects = workspace.get_recent_projects(limit=10)
         
         if recent_projects:
             for proj in recent_projects:
-                col1, col2, col3 = st.columns([3, 2, 1])
+                col1, col2, col3, col4 = st.columns([3, 2, 1, 1])
                 
                 with col1:
-                    st.markdown(f"**{proj['name']}**")
-                    st.caption(f"Modified: {proj['modified'].strftime('%Y-%m-%d %H:%M')}")
+                    st.markdown(f"**{proj.name}**")
+                    if proj.client:
+                        st.caption(f"Client: {proj.client}")
                 
                 with col2:
-                    size_kb = proj['size'] / 1024
-                    st.caption(f"Size: {size_kb:.1f} KB")
+                    st.caption(f"Status: {proj.status}")
                 
                 with col3:
-                    if st.button("Open", key=f"open_recent_{proj['name']}"):
-                        st.session_state['current_project'] = proj['name']
-                        st.rerun()
+                    last_opened = datetime.fromisoformat(proj.last_opened)
+                    st.caption(f"Opened: {last_opened.strftime('%Y-%m-%d')}")
+                
+                with col4:
+                    if st.button("Open", key=f"open_recent_{proj.uuid}"):
+                        success, message, active_project = workspace.open_project(proj.uuid)
+                        if success:
+                            st.success(message)
+                            st.rerun()
+                        else:
+                            st.error(message)
         else:
             st.info("No recent projects. Create a new project to get started.")
     
@@ -75,54 +91,37 @@ if st.session_state['current_project'] is None:
         with st.form("new_project_form"):
             project_name = st.text_input("Project Name*", help="Unique name for this project workspace")
             client_name = st.text_input("Client Name", help="Client organization name")
-            program_name = st.text_input("Program Name", help="Program or initiative name")
             description = st.text_area("Project Description", help="Brief description of the implementation")
             
-            col1, col2 = st.columns(2)
-            with col1:
-                sponsor = st.text_input("Executive Sponsor")
-                start_date = st.date_input("Start Date")
-            with col2:
-                change_manager = st.text_input("Change Manager")
-                end_date = st.date_input("End Date")
+            status = st.selectbox(
+                "Project Status",
+                ["Pre-Implementation", "Planning", "In Progress", "On Hold", "Completed", "Archived"],
+                help="Current project status"
+            )
             
-            submitted = st.form_submit_button("Create Project Workspace")
+            submitted = st.form_submit_button("Create Project Workspace", type="primary")
             
             if submitted:
                 if not project_name:
                     st.error("Project Name is required")
                 else:
-                    existing_projects = list_projects()
-                    if any(p['name'].lower() == project_name.lower() for p in existing_projects):
-                        st.error(f"Project '{project_name}' already exists. Choose a different name.")
-                    else:
-                        engine = init_db(project_name)
-                        session = get_session(engine)
-                        
-                        metadata = ProjectMetadata(
-                            project_name=project_name,
-                            client_name=client_name,
-                            program_name=program_name,
-                            description=description,
-                            sponsor=sponsor,
-                            change_manager=change_manager,
-                            start_date=datetime.combine(start_date, datetime.min.time()) if start_date else None,
-                            end_date=datetime.combine(end_date, datetime.min.time()) if end_date else None,
-                            registry_version='1.0',
-                            status='Active'
-                        )
-                        session.add(metadata)
-                        session.commit()
-                        session.close()
-                        
-                        st.session_state['current_project'] = project_name
-                        st.success(f"✅ Project '{project_name}' created successfully!")
+                    success, message, active_project = workspace.create_new_project(
+                        name=project_name,
+                        client=client_name,
+                        description=description,
+                        status=status
+                    )
+                    
+                    if success:
+                        st.success(message)
                         st.rerun()
+                    else:
+                        st.error(message)
     
     with tab3:
         st.markdown("### Open Existing Project")
         
-        all_projects = list_projects()
+        all_projects = workspace.registry.list_projects()
         
         if all_projects:
             st.markdown(f"**{len(all_projects)} project workspace(s) available:**")
@@ -131,42 +130,50 @@ if st.session_state['current_project'] is None:
                 col1, col2, col3, col4 = st.columns([3, 2, 1, 1])
                 
                 with col1:
-                    st.markdown(f"**{proj['name']}**")
+                    st.markdown(f"**{proj.name}**")
+                    if proj.client:
+                        st.caption(f"Client: {proj.client}")
                 
                 with col2:
-                    st.caption(f"Modified: {proj['modified'].strftime('%Y-%m-%d')}")
+                    st.caption(f"Status: {proj.status}")
                 
                 with col3:
-                    size_kb = proj['size'] / 1024
-                    st.caption(f"{size_kb:.1f} KB")
+                    modified = datetime.fromisoformat(proj.last_modified)
+                    st.caption(f"Modified: {modified.strftime('%Y-%m-%d')}")
                 
                 with col4:
-                    if st.button("Open", key=f"open_all_{proj['name']}"):
-                        st.session_state['current_project'] = proj['name']
-                        st.rerun()
+                    if st.button("Open", key=f"open_all_{proj.uuid}"):
+                        success, message, active_project = workspace.open_project(proj.uuid)
+                        if success:
+                            st.success(message)
+                            st.rerun()
+                        else:
+                            st.error(message)
         else:
             st.info("No projects found. Create a new project to get started.")
 
 else:
-    current_project = st.session_state['current_project']
+    # Get active project from context
+    active_project = ProjectContext.get_active_project()
     
-    engine = get_engine(current_project)
-    session = get_session(engine)
+    if not active_project:
+        st.error("Active project context lost. Please reopen the project.")
+        ProjectContext.clear_active_project()
+        st.rerun()
     
-    metadata = session.query(ProjectMetadata).first()
+    # Display workspace status bar
+    st.success(f"✅ **Project Workspace:** {active_project.name}")
     
-    st.success(f"✅ **Project Workspace:** {current_project}")
-    
-    if metadata:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            if metadata.client_name:
-                st.caption(f"**Client:** {metadata.client_name}")
-        with col2:
-            if metadata.program_name:
-                st.caption(f"**Program:** {metadata.program_name}")
-        with col3:
-            st.caption(f"**Status:** {metadata.status}")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        if active_project.client:
+            st.caption(f"**Client:** {active_project.client}")
+    with col2:
+        st.caption(f"**Status:** {active_project.status}")
+    with col3:
+        st.caption(f"**Last Opened:** {active_project.last_opened.strftime('%Y-%m-%d %H:%M')}")
+    with col4:
+        st.caption(f"**Version:** {active_project.version}")
     
     st.markdown("---")
     
@@ -186,22 +193,55 @@ else:
     
     st.markdown("---")
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         if st.button("💾 Save Project", use_container_width=True):
-            st.success("Project automatically saved")
+            success, message = workspace.save_project()
+            if success:
+                st.success(message)
+            else:
+                st.error(message)
     
     with col2:
-        if st.button("� Switch Project", use_container_width=True):
-            st.session_state['current_project'] = None
-            st.rerun()
+        if st.button("📋 Save As...", use_container_width=True):
+            st.session_state['show_save_as'] = True
     
     with col3:
-        if st.button("📤 Export Project", use_container_width=True):
+        if st.button("🔄 Switch Project", use_container_width=True):
+            success, message = workspace.close_project()
+            if success:
+                st.info(message)
+            st.rerun()
+    
+    with col4:
+        if st.button("📤 Export", use_container_width=True):
             st.info("Export functionality available in Setup workspace")
     
-    session.close()
+    # Save As dialog
+    if st.session_state.get('show_save_as', False):
+        with st.form("save_as_form"):
+            st.markdown("### Save Project As")
+            new_name = st.text_input("New Project Name*")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                save_as = st.form_submit_button("Save As", type="primary")
+            with col2:
+                cancel = st.form_submit_button("Cancel")
+            
+            if save_as and new_name:
+                success, message, new_project = workspace.save_project_as(new_name)
+                if success:
+                    st.success(message)
+                    st.session_state['show_save_as'] = False
+                    st.rerun()
+                else:
+                    st.error(message)
+            
+            if cancel:
+                st.session_state['show_save_as'] = False
+                st.rerun()
 
 st.markdown("---")
 st.markdown("**Design Principles:** Practitioner First • Project Isolation • Coverage, not Execution • Traceability • Enterprise Assets • Carry Forward")
