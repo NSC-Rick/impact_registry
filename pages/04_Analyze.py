@@ -1,29 +1,31 @@
 import streamlit as st
 import pandas as pd
-from database.schema import init_db, get_session, get_engine
+from database.schema import init_db, get_session, get_engine, ProjectMetadata
 from services.repository import Repository
 from services.analytics import AnalyticsService
 
 st.set_page_config(page_title="Analyze", page_icon="📊", layout="wide")
 
-engine = init_db()
+# Check for active project workspace
+if 'current_project' not in st.session_state or st.session_state['current_project'] is None:
+    st.warning("⚠️ Please open a project workspace first")
+    st.info("Return to the home page to create or open a project workspace")
+    st.stop()
+
+current_project = st.session_state['current_project']
+engine = get_engine(current_project)
 session = get_session(engine)
 repo = Repository(session)
 analytics = AnalyticsService(session)
 
+# Get project metadata
+metadata = session.query(ProjectMetadata).first()
+
 st.title("📊 Analyze")
 st.markdown("### Understand Patterns and Risks")
+st.success(f"📁 **{current_project}**")
 
-if 'current_project_id' not in st.session_state:
-    st.warning("⚠️ Please select or create a project in the Setup page first")
-    st.stop()
-
-project_id = st.session_state['current_project_id']
-project = repo.get_project(project_id)
-
-st.info(f"📁 Current Project: **{project.name}**")
-
-impacts = repo.list_impacts(project_id)
+impacts = repo.list_impacts()
 
 if not impacts:
     st.warning("⚠️ No impacts found. Please capture impacts first in the Capture page.")

@@ -50,7 +50,6 @@ class Repository:
     
     def create_impact(self, impact_dto: ImpactDTO) -> ImpactDTO:
         impact = Impact(
-            project_id=impact_dto.project_id,
             impact_number=impact_dto.impact_number,
             title=impact_dto.title,
             description=impact_dto.description,
@@ -74,10 +73,7 @@ class Repository:
         return ImpactDTO.from_orm(impact)
     
     def list_impacts(self, project_id: Optional[int] = None) -> List[ImpactDTO]:
-        query = self.session.query(Impact)
-        if project_id:
-            query = query.filter(Impact.project_id == project_id)
-        impacts = query.all()
+        impacts = self.session.query(Impact).all()
         return [ImpactDTO.from_orm(i) for i in impacts]
     
     def update_impact(self, impact_dto: ImpactDTO) -> ImpactDTO:
@@ -146,10 +142,9 @@ class Repository:
             return True
         return False
     
-    def create_stakeholder_group(self, project_id: int, name: str, description: str = "", 
+    def create_stakeholder_group(self, project_id, name: str, description: str = "", 
                                 size: int = 0, influence: str = "") -> StakeholderGroup:
         sg = StakeholderGroup(
-            project_id=project_id,
             name=name,
             description=description,
             size=size,
@@ -160,15 +155,12 @@ class Repository:
         self.session.refresh(sg)
         return sg
     
-    def list_stakeholder_groups(self, project_id: int) -> List[StakeholderGroup]:
-        return self.session.query(StakeholderGroup).filter(
-            StakeholderGroup.project_id == project_id
-        ).all()
+    def list_stakeholder_groups(self, project_id=None) -> List[StakeholderGroup]:
+        return self.session.query(StakeholderGroup).all()
     
-    def create_organization_unit(self, project_id: int, name: str, description: str = "",
+    def create_organization_unit(self, project_id, name: str, description: str = "",
                                 parent_unit: str = "", head_of_unit: str = "") -> OrganizationUnit:
         ou = OrganizationUnit(
-            project_id=project_id,
             name=name,
             description=description,
             parent_unit=parent_unit,
@@ -179,15 +171,12 @@ class Repository:
         self.session.refresh(ou)
         return ou
     
-    def list_organization_units(self, project_id: int) -> List[OrganizationUnit]:
-        return self.session.query(OrganizationUnit).filter(
-            OrganizationUnit.project_id == project_id
-        ).all()
+    def list_organization_units(self, project_id=None) -> List[OrganizationUnit]:
+        return self.session.query(OrganizationUnit).all()
     
-    def create_business_process(self, project_id: int, name: str, description: str = "",
+    def create_business_process(self, project_id, name: str, description: str = "",
                                process_owner: str = "", criticality: str = "") -> BusinessProcess:
         bp = BusinessProcess(
-            project_id=project_id,
             name=name,
             description=description,
             process_owner=process_owner,
@@ -198,15 +187,12 @@ class Repository:
         self.session.refresh(bp)
         return bp
     
-    def list_business_processes(self, project_id: int) -> List[BusinessProcess]:
-        return self.session.query(BusinessProcess).filter(
-            BusinessProcess.project_id == project_id
-        ).all()
+    def list_business_processes(self, project_id=None) -> List[BusinessProcess]:
+        return self.session.query(BusinessProcess).all()
     
-    def create_system(self, project_id: int, name: str, description: str = "",
+    def create_system(self, project_id, name: str, description: str = "",
                      system_owner: str = "", vendor: str = "", criticality: str = "") -> System:
         sys = System(
-            project_id=project_id,
             name=name,
             description=description,
             system_owner=system_owner,
@@ -218,15 +204,12 @@ class Repository:
         self.session.refresh(sys)
         return sys
     
-    def list_systems(self, project_id: int) -> List[System]:
-        return self.session.query(System).filter(
-            System.project_id == project_id
-        ).all()
+    def list_systems(self, project_id=None) -> List[System]:
+        return self.session.query(System).all()
     
-    def create_policy(self, project_id: int, name: str, description: str = "",
+    def create_policy(self, project_id, name: str, description: str = "",
                      policy_owner: str = "", effective_date = None) -> Policy:
         pol = Policy(
-            project_id=project_id,
             name=name,
             description=description,
             policy_owner=policy_owner,
@@ -237,10 +220,8 @@ class Repository:
         self.session.refresh(pol)
         return pol
     
-    def list_policies(self, project_id: int) -> List[Policy]:
-        return self.session.query(Policy).filter(
-            Policy.project_id == project_id
-        ).all()
+    def list_policies(self, project_id=None) -> List[Policy]:
+        return self.session.query(Policy).all()
     
     def create_source_evidence(self, impact_id: int, source_type: str, 
                               source_reference: str, notes: str = "") -> SourceEvidence:

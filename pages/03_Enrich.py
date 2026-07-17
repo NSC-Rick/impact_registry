@@ -1,27 +1,29 @@
 import streamlit as st
-from database.schema import init_db, get_session, get_engine
+from database.schema import init_db, get_session, get_engine, ProjectMetadata
 from services.repository import Repository
 from models.impact import ImpactDTO
 
 st.set_page_config(page_title="Enrich", page_icon="🔗", layout="wide")
 
-engine = init_db()
+# Check for active project workspace
+if 'current_project' not in st.session_state or st.session_state['current_project'] is None:
+    st.warning("⚠️ Please open a project workspace first")
+    st.info("Return to the home page to create or open a project workspace")
+    st.stop()
+
+current_project = st.session_state['current_project']
+engine = get_engine(current_project)
 session = get_session(engine)
 repo = Repository(session)
 
+# Get project metadata
+metadata = session.query(ProjectMetadata).first()
+
 st.title("🔗 Enrich")
 st.markdown("### Add Traceability and Context")
+st.success(f"📁 **{current_project}**")
 
-if 'current_project_id' not in st.session_state:
-    st.warning("⚠️ Please select or create a project in the Setup page first")
-    st.stop()
-
-project_id = st.session_state['current_project_id']
-project = repo.get_project(project_id)
-
-st.info(f"📁 Current Project: **{project.name}**")
-
-impacts = repo.list_impacts(project_id)
+impacts = repo.list_impacts()
 
 if not impacts:
     st.warning("⚠️ No impacts found. Please capture impacts first in the Capture page.")
@@ -111,7 +113,6 @@ with tab1:
         if st.form_submit_button("💾 Save Changes", type="primary"):
             updated_impact = ImpactDTO(
                 id=impact.id,
-                project_id=impact.project_id,
                 impact_number=impact_number,
                 title=title,
                 description=description,
@@ -137,11 +138,11 @@ with tab2:
     st.subheader("Traceability")
     st.markdown("Link this impact to enterprise assets to establish traceability.")
     
-    stakeholder_groups = repo.list_stakeholder_groups(project_id)
-    organization_units = repo.list_organization_units(project_id)
-    business_processes = repo.list_business_processes(project_id)
-    systems = repo.list_systems(project_id)
-    policies = repo.list_policies(project_id)
+    stakeholder_groups = repo.list_stakeholder_groups()
+    organization_units = repo.list_organization_units()
+    business_processes = repo.list_business_processes()
+    systems = repo.list_systems()
+    policies = repo.list_policies()
     
     with st.form("traceability_form"):
         st.markdown("#### Stakeholder Groups")
@@ -207,7 +208,6 @@ with tab2:
         if st.form_submit_button("🔗 Update Traceability", type="primary"):
             updated_impact = ImpactDTO(
                 id=impact.id,
-                project_id=impact.project_id,
                 impact_number=impact.impact_number,
                 description=impact.description,
                 category=impact.category,

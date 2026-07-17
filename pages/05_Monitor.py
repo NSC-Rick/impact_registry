@@ -1,38 +1,40 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-from database.schema import init_db, get_session, get_engine
+from database.schema import init_db, get_session, get_engine, ProjectMetadata
 from services.repository import Repository
 from services.analytics import AnalyticsService
 
 st.set_page_config(page_title="Monitor", page_icon="📈", layout="wide")
 
-engine = init_db()
+# Check for active project workspace
+if 'current_project' not in st.session_state or st.session_state['current_project'] is None:
+    st.warning("⚠️ Please open a project workspace first")
+    st.info("Return to the home page to create or open a project workspace")
+    st.stop()
+
+current_project = st.session_state['current_project']
+engine = get_engine(current_project)
 session = get_session(engine)
 repo = Repository(session)
 analytics = AnalyticsService(session)
 
+# Get project metadata
+metadata = session.query(ProjectMetadata).first()
+
 st.title("📈 Monitor")
 st.markdown("### Track Progress and Coverage")
+st.success(f"📁 **{current_project}**")
 
-if 'current_project_id' not in st.session_state:
-    st.warning("⚠️ Please select or create a project in the Setup page first")
-    st.stop()
-
-project_id = st.session_state['current_project_id']
-project = repo.get_project(project_id)
-
-st.info(f"📁 Current Project: **{project.name}**")
-
-impacts = repo.list_impacts(project_id)
+impacts = repo.list_impacts()
 
 tab1, tab2, tab3, tab4 = st.tabs(["Dashboard", "Change Assets", "Status Tracking", "Export"])
 
 with tab1:
     st.subheader("Project Dashboard")
     
-    summary = analytics.get_impact_summary(project_id)
-    coverage = analytics.get_coverage_metrics(project_id)
+    summary = analytics.get_impact_summary()
+    coverage = analytics.get_coverage_metrics()
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -223,11 +225,11 @@ with tab4:
     if impacts:
         export_data = []
         for impact in impacts:
-            sgs = repo.list_stakeholder_groups(project_id)
-            ous = repo.list_organization_units(project_id)
-            bps = repo.list_business_processes(project_id)
-            systems = repo.list_systems(project_id)
-            policies = repo.list_policies(project_id)
+            sgs = repo.list_stakeholder_groups()
+            ous = repo.list_organization_units()
+            bps = repo.list_business_processes()
+            systems = repo.list_systems()
+            policies = repo.list_policies()
             
             sg_names = [sg.name for sg in sgs if sg.id in impact.stakeholder_group_ids]
             ou_names = [ou.name for ou in ous if ou.id in impact.organization_unit_ids]

@@ -1,26 +1,28 @@
 import streamlit as st
 import pandas as pd
-from database.schema import init_db, get_session, get_engine
+from database.schema import init_db, get_session, get_engine, ProjectMetadata
 from services.repository import Repository
 from models.impact import ImpactDTO
 
 st.set_page_config(page_title="Capture", page_icon="📝", layout="wide")
 
-engine = init_db()
+# Check for active project workspace
+if 'current_project' not in st.session_state or st.session_state['current_project'] is None:
+    st.warning("⚠️ Please open a project workspace first")
+    st.info("Return to the home page to create or open a project workspace")
+    st.stop()
+
+current_project = st.session_state['current_project']
+engine = get_engine(current_project)
 session = get_session(engine)
 repo = Repository(session)
 
-st.title("📝 Capture")
+# Get project metadata
+metadata = session.query(ProjectMetadata).first()
+
+st.title("� Capture")
 st.markdown("### Record Impacts Quickly and Efficiently")
-
-if 'current_project_id' not in st.session_state:
-    st.warning("⚠️ Please select or create a project in the Setup page first")
-    st.stop()
-
-project_id = st.session_state['current_project_id']
-project = repo.get_project(project_id)
-
-st.info(f"📁 Current Project: **{project.name}**")
+st.success(f"📁 **{current_project}**")
 
 tab1, tab2, tab3 = st.tabs(["Quick Capture", "Bulk Import", "Impact List"])
 
@@ -80,12 +82,11 @@ with tab1:
                 submit = True
         
         if submit and title and description:
-            impacts = repo.list_impacts(project_id)
+            impacts = repo.list_impacts()
             if not impact_number:
                 impact_number = f"IMP-{len(impacts) + 1:04d}"
             
             impact_dto = ImpactDTO(
-                project_id=project_id,
                 impact_number=impact_number,
                 title=title,
                 description=description,
@@ -171,11 +172,10 @@ with tab2:
                             
                             impact_number = row.get('impact_number', '')
                             if pd.isna(impact_number) or str(impact_number).strip() == '':
-                                impacts = repo.list_impacts(project_id)
+                                impacts = repo.list_impacts()
                                 impact_number = f"IMP-{len(impacts) + imported_count + 1:04d}"
                             
                             impact_dto = ImpactDTO(
-                                project_id=project_id,
                                 impact_number=str(impact_number),
                                 description=str(row['description']),
                                 category=str(row.get('category', '')) if not pd.isna(row.get('category')) else '',
@@ -211,7 +211,7 @@ with tab2:
 with tab3:
     st.subheader("Impact List")
     
-    impacts = repo.list_impacts(project_id)
+    impacts = repo.list_impacts()
     
     if impacts:
         col1, col2, col3 = st.columns([1, 1, 3])

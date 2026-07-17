@@ -8,27 +8,19 @@ class AnalyticsService:
     def __init__(self, session: Session):
         self.session = session
     
-    def get_impact_summary(self, project_id: int) -> Dict:
-        total_impacts = self.session.query(Impact).filter(
-            Impact.project_id == project_id
-        ).count()
+    def get_impact_summary(self, project_id=None) -> Dict:
+        total_impacts = self.session.query(Impact).count()
         
         by_category = self.session.query(
             Impact.category, func.count(Impact.id)
-        ).filter(
-            Impact.project_id == project_id
         ).group_by(Impact.category).all()
         
         by_severity = self.session.query(
             Impact.severity, func.count(Impact.id)
-        ).filter(
-            Impact.project_id == project_id
         ).group_by(Impact.severity).all()
         
         by_status = self.session.query(
             Impact.status, func.count(Impact.id)
-        ).filter(
-            Impact.project_id == project_id
         ).group_by(Impact.status).all()
         
         return {
@@ -38,10 +30,8 @@ class AnalyticsService:
             'by_status': dict(by_status)
         }
     
-    def get_coverage_metrics(self, project_id: int) -> Dict:
-        impacts = self.session.query(Impact).filter(
-            Impact.project_id == project_id
-        ).all()
+    def get_coverage_metrics(self, project_id=None) -> Dict:
+        impacts = self.session.query(Impact).all()
         
         total = len(impacts)
         if total == 0:
@@ -80,10 +70,8 @@ class AnalyticsService:
             'coverage_percentage': round((enriched / total) * 100, 1) if total > 0 else 0
         }
     
-    def get_risk_matrix(self, project_id: int) -> List[Tuple]:
-        impacts = self.session.query(Impact).filter(
-            Impact.project_id == project_id
-        ).all()
+    def get_risk_matrix(self, project_id=None) -> List[Tuple]:
+        impacts = self.session.query(Impact).all()
         
         matrix = []
         for impact in impacts:
@@ -98,42 +86,36 @@ class AnalyticsService:
         
         return matrix
     
-    def get_stakeholder_impact_count(self, project_id: int) -> List[Tuple]:
+    def get_stakeholder_impact_count(self, project_id=None) -> List[Tuple]:
         results = self.session.query(
             StakeholderGroup.name,
             func.count(Impact.id)
         ).join(
             Impact.stakeholder_groups
-        ).filter(
-            StakeholderGroup.project_id == project_id
         ).group_by(
             StakeholderGroup.name
         ).all()
         
         return results
     
-    def get_process_impact_count(self, project_id: int) -> List[Tuple]:
+    def get_process_impact_count(self, project_id=None) -> List[Tuple]:
         results = self.session.query(
             BusinessProcess.name,
             func.count(Impact.id)
         ).join(
             Impact.business_processes
-        ).filter(
-            BusinessProcess.project_id == project_id
         ).group_by(
             BusinessProcess.name
         ).all()
         
         return results
     
-    def get_system_impact_count(self, project_id: int) -> List[Tuple]:
+    def get_system_impact_count(self, project_id=None) -> List[Tuple]:
         results = self.session.query(
             System.name,
             func.count(Impact.id)
         ).join(
             Impact.systems
-        ).filter(
-            System.project_id == project_id
         ).group_by(
             System.name
         ).all()
