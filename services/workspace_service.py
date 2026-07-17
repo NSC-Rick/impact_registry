@@ -47,7 +47,8 @@ class WorkspaceService:
         name: str,
         client: str = "",
         description: str = "",
-        status: str = "Pre-Implementation"
+        status: str = "Pre-Implementation",
+        starter_library_id: Optional[str] = None
     ) -> Tuple[bool, str, Optional[ActiveProject]]:
         """
         Create a new project workspace.
@@ -92,6 +93,22 @@ class WorkspaceService:
             )
             session.add(metadata)
             session.commit()
+            
+            # Apply starter library if specified
+            if starter_library_id:
+                from libraries.starter_library_service import StarterLibraryService
+                library_service = StarterLibraryService()
+                library = library_service.load_library(starter_library_id)
+                
+                if library:
+                    success, message, stats = library_service.apply_library_to_project(library, session)
+                    if not success:
+                        session.close()
+                        # Clean up created file
+                        if file_path.exists():
+                            file_path.unlink()
+                        return False, f"Error applying library: {message}", None
+            
             session.close()
             
             # Create registry entry

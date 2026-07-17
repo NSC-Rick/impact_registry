@@ -1,0 +1,348 @@
+{
+  "id": "vms_msp",
+  "name": "VMS / MSP Implementation",
+  "description": "Vendor Management System and Managed Service Provider program implementation with contingent workforce management impacts.",
+  "industry": "Cross-Industry",
+  "project_type": "VMS/MSP",
+  "version": "1.0",
+  "created_at": "2026-07-17T00:00:00",
+  "updated_at": "2026-07-17T00:00:00",
+  "stakeholder_groups": [
+    {
+      "name": "Hiring Managers",
+      "description": "Managers who request and supervise contingent workers",
+      "size": 150,
+      "influence": "High",
+      "notes": "Primary requestors of contingent labor"
+    },
+    {
+      "name": "Procurement Team",
+      "description": "Contingent workforce procurement specialists",
+      "size": 10,
+      "influence": "High",
+      "notes": "Program administrators"
+    },
+    {
+      "name": "HR Department",
+      "description": "Human resources and talent acquisition",
+      "size": 25,
+      "influence": "High",
+      "notes": "Policy owners and compliance"
+    },
+    {
+      "name": "Finance/AP Team",
+      "description": "Accounts payable and invoice processing",
+      "size": 15,
+      "influence": "Medium",
+      "notes": "Invoice and payment processing"
+    },
+    {
+      "name": "Contingent Workers",
+      "description": "Contract workers, consultants, and temporary staff",
+      "size": 500,
+      "influence": "Low",
+      "notes": "Onboarding and timesheet submission"
+    },
+    {
+      "name": "Staffing Suppliers",
+      "description": "External staffing agencies and vendors",
+      "size": 50,
+      "influence": "Medium",
+      "notes": "Supplier partners"
+    },
+    {
+      "name": "IT Department",
+      "description": "Technology support and integration",
+      "size": 12,
+      "influence": "Medium",
+      "notes": "System integration and support"
+    },
+    {
+      "name": "Legal/Compliance",
+      "description": "Legal counsel and compliance officers",
+      "size": 8,
+      "influence": "High",
+      "notes": "Worker classification and compliance"
+    }
+  ],
+  "organization_units": [
+    {
+      "name": "Procurement",
+      "description": "Strategic sourcing and procurement operations",
+      "parent_unit": "",
+      "head_of_unit": "",
+      "notes": ""
+    },
+    {
+      "name": "Human Resources",
+      "description": "HR services and talent management",
+      "parent_unit": "",
+      "head_of_unit": "",
+      "notes": ""
+    },
+    {
+      "name": "Finance",
+      "description": "Financial operations and accounts payable",
+      "parent_unit": "",
+      "head_of_unit": "",
+      "notes": ""
+    },
+    {
+      "name": "IT",
+      "description": "Information technology services",
+      "parent_unit": "",
+      "head_of_unit": "",
+      "notes": ""
+    }
+  ],
+  "business_processes": [
+    {
+      "name": "Contingent Worker Requisition",
+      "description": "Request and approval process for contingent labor",
+      "process_owner": "",
+      "criticality": "High",
+      "notes": "Core VMS process"
+    },
+    {
+      "name": "Candidate Selection",
+      "description": "Review and selection of contingent worker candidates",
+      "process_owner": "",
+      "criticality": "High",
+      "notes": ""
+    },
+    {
+      "name": "Worker Onboarding",
+      "description": "Contingent worker onboarding and access provisioning",
+      "process_owner": "",
+      "criticality": "High",
+      "notes": ""
+    },
+    {
+      "name": "Timesheet Management",
+      "description": "Time entry, approval, and processing",
+      "process_owner": "",
+      "criticality": "High",
+      "notes": "Weekly cycle"
+    },
+    {
+      "name": "Invoice Processing",
+      "description": "Supplier invoice receipt and payment",
+      "process_owner": "",
+      "criticality": "High",
+      "notes": "Automated matching"
+    },
+    {
+      "name": "Supplier Management",
+      "description": "Vendor onboarding, performance tracking, and compliance",
+      "process_owner": "",
+      "criticality": "Medium",
+      "notes": ""
+    }
+  ],
+  "systems": [
+    {
+      "name": "VMS Platform",
+      "description": "Vendor management system for contingent workforce",
+      "system_owner": "",
+      "vendor": "",
+      "criticality": "Critical",
+      "notes": "New implementation"
+    },
+    {
+      "name": "HRIS",
+      "description": "Human resources information system",
+      "system_owner": "",
+      "vendor": "",
+      "criticality": "High",
+      "notes": "Integration required"
+    },
+    {
+      "name": "ERP/Financial System",
+      "description": "Enterprise resource planning system",
+      "system_owner": "",
+      "vendor": "",
+      "criticality": "High",
+      "notes": "Integration for PO and invoicing"
+    }
+  ],
+  "policies": [
+    {
+      "name": "Contingent Workforce Policy",
+      "description": "Guidelines for engaging contingent workers",
+      "policy_owner": "",
+      "notes": "Defines when contingent labor is appropriate"
+    },
+    {
+      "name": "Worker Classification Policy",
+      "description": "Standards for employee vs contractor classification",
+      "policy_owner": "",
+      "notes": "Compliance requirement"
+    },
+    {
+      "name": "Supplier Code of Conduct",
+      "description": "Requirements for staffing suppliers",
+      "policy_owner": "",
+      "notes": "Ethical and compliance standards"
+    }
+  ],
+  "impacts": [
+    {
+      "impact_number": "IMP-0001",
+      "title": "Mandatory VMS platform for all contingent worker requests",
+      "description": "All contingent labor requisitions must be submitted through the VMS platform. Email and phone requests will no longer be accepted.",
+      "area_of_change": "Process",
+      "category": "Process Change",
+      "severity": "High",
+      "likelihood": "High",
+      "notes": "Significant change from current informal process",
+      "stakeholder_groups": ["Hiring Managers", "Procurement Team"],
+      "organization_units": ["Procurement"],
+      "business_processes": ["Contingent Worker Requisition"],
+      "systems": ["VMS Platform"],
+      "policies": ["Contingent Workforce Policy"]
+    },
+    {
+      "impact_number": "IMP-0002",
+      "title": "Supplier consolidation to approved vendor list",
+      "description": "Reduction from 200+ suppliers to 15-20 preferred suppliers. Hiring managers must select from approved list.",
+      "area_of_change": "Process",
+      "category": "Policy Change",
+      "severity": "High",
+      "likelihood": "High",
+      "notes": "May limit manager flexibility but improves compliance",
+      "stakeholder_groups": ["Hiring Managers", "Staffing Suppliers", "Procurement Team"],
+      "organization_units": ["Procurement"],
+      "business_processes": ["Supplier Management"],
+      "systems": ["VMS Platform"],
+      "policies": ["Supplier Code of Conduct"]
+    },
+    {
+      "impact_number": "IMP-0003",
+      "title": "Automated timesheet approval workflow",
+      "description": "Timesheets automatically routed to hiring managers for weekly approval. No approval = no payment to supplier.",
+      "area_of_change": "Process",
+      "category": "Process Change",
+      "severity": "Medium",
+      "likelihood": "High",
+      "notes": "Managers must approve weekly or escalate",
+      "stakeholder_groups": ["Hiring Managers", "Contingent Workers", "Staffing Suppliers"],
+      "organization_units": [],
+      "business_processes": ["Timesheet Management"],
+      "systems": ["VMS Platform"],
+      "policies": []
+    },
+    {
+      "impact_number": "IMP-0004",
+      "title": "Standardized job descriptions and rate cards",
+      "description": "Pre-defined job categories with established rate ranges. Custom roles require additional approval.",
+      "area_of_change": "Process",
+      "category": "Process Change",
+      "severity": "Medium",
+      "likelihood": "High",
+      "notes": "Reduces rate variability and negotiation",
+      "stakeholder_groups": ["Hiring Managers", "Procurement Team", "Staffing Suppliers"],
+      "organization_units": ["Procurement", "Human Resources"],
+      "business_processes": ["Contingent Worker Requisition"],
+      "systems": ["VMS Platform"],
+      "policies": ["Contingent Workforce Policy"]
+    },
+    {
+      "impact_number": "IMP-0005",
+      "title": "Worker classification compliance checks",
+      "description": "Automated screening for co-employment risk and worker classification compliance before engagement.",
+      "area_of_change": "Process",
+      "category": "Compliance",
+      "severity": "High",
+      "likelihood": "Medium",
+      "notes": "Legal risk mitigation",
+      "stakeholder_groups": ["Legal/Compliance", "HR Department", "Procurement Team"],
+      "organization_units": ["Human Resources"],
+      "business_processes": ["Worker Onboarding"],
+      "systems": ["VMS Platform"],
+      "policies": ["Worker Classification Policy"]
+    },
+    {
+      "impact_number": "IMP-0006",
+      "title": "Contingent worker onboarding portal",
+      "description": "Workers complete onboarding tasks (background check, I-9, training) through self-service portal before start date.",
+      "area_of_change": "Technology",
+      "category": "Process Change",
+      "severity": "Medium",
+      "likelihood": "High",
+      "notes": "Improves compliance and reduces administrative burden",
+      "stakeholder_groups": ["Contingent Workers", "HR Department", "Hiring Managers"],
+      "organization_units": ["Human Resources"],
+      "business_processes": ["Worker Onboarding"],
+      "systems": ["VMS Platform", "HRIS"],
+      "policies": []
+    },
+    {
+      "impact_number": "IMP-0007",
+      "title": "Automated invoice matching and payment",
+      "description": "System automatically matches timesheets to invoices and generates payment. Eliminates manual invoice entry.",
+      "area_of_change": "Process",
+      "category": "Process Change",
+      "severity": "Medium",
+      "likelihood": "High",
+      "notes": "Reduces AP workload significantly",
+      "stakeholder_groups": ["Finance/AP Team", "Staffing Suppliers"],
+      "organization_units": ["Finance"],
+      "business_processes": ["Invoice Processing"],
+      "systems": ["VMS Platform", "ERP/Financial System"],
+      "policies": []
+    },
+    {
+      "impact_number": "IMP-0008",
+      "title": "Real-time spend visibility and reporting",
+      "description": "Managers and executives can view contingent workforce spend by department, supplier, and worker type in real-time dashboards.",
+      "area_of_change": "Technology",
+      "category": "Capability Enhancement",
+      "severity": "Low",
+      "likelihood": "High",
+      "notes": "Positive change - improved visibility",
+      "stakeholder_groups": ["Hiring Managers", "Procurement Team"],
+      "organization_units": ["Procurement", "Finance"],
+      "business_processes": [],
+      "systems": ["VMS Platform"],
+      "policies": []
+    },
+    {
+      "impact_number": "IMP-0009",
+      "title": "MSP program management and support",
+      "description": "Third-party MSP provider will manage supplier relationships, candidate sourcing, and program compliance.",
+      "area_of_change": "Organization",
+      "category": "Organizational Change",
+      "severity": "High",
+      "likelihood": "High",
+      "notes": "Shifts responsibilities from internal team to MSP",
+      "stakeholder_groups": ["Procurement Team", "Staffing Suppliers", "Hiring Managers"],
+      "organization_units": ["Procurement"],
+      "business_processes": ["Supplier Management", "Candidate Selection"],
+      "systems": ["VMS Platform"],
+      "policies": ["Supplier Code of Conduct"]
+    },
+    {
+      "impact_number": "IMP-0010",
+      "title": "Supplier performance scorecards",
+      "description": "Automated tracking of supplier metrics (fill rate, time to fill, quality, compliance). Poor performers may be removed from program.",
+      "area_of_change": "Process",
+      "category": "Process Change",
+      "severity": "Medium",
+      "likelihood": "High",
+      "notes": "Drives supplier accountability",
+      "stakeholder_groups": ["Staffing Suppliers", "Procurement Team"],
+      "organization_units": ["Procurement"],
+      "business_processes": ["Supplier Management"],
+      "systems": ["VMS Platform"],
+      "policies": ["Supplier Code of Conduct"]
+    }
+  ],
+  "categories": [
+    "Process Change",
+    "Policy Change",
+    "Compliance",
+    "Technology Change",
+    "Capability Enhancement",
+    "Organizational Change"
+  ]
+}

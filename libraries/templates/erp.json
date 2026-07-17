@@ -1,0 +1,274 @@
+{
+  "id": "erp",
+  "name": "ERP Implementation",
+  "description": "Enterprise Resource Planning system implementation with common stakeholder groups, business processes, and change impacts.",
+  "industry": "Cross-Industry",
+  "project_type": "ERP Implementation",
+  "version": "1.0",
+  "created_at": "2026-07-17T00:00:00",
+  "updated_at": "2026-07-17T00:00:00",
+  "stakeholder_groups": [
+    {
+      "name": "Finance Team",
+      "description": "Financial accounting and reporting personnel",
+      "size": 25,
+      "influence": "High",
+      "notes": "Primary users of financial modules"
+    },
+    {
+      "name": "Procurement Team",
+      "description": "Purchasing and vendor management staff",
+      "size": 15,
+      "influence": "High",
+      "notes": "Heavy users of procurement and PO processes"
+    },
+    {
+      "name": "IT Department",
+      "description": "Information technology support and infrastructure",
+      "size": 20,
+      "influence": "High",
+      "notes": "Technical implementation and support"
+    },
+    {
+      "name": "Operations Management",
+      "description": "Operational leaders and supervisors",
+      "size": 30,
+      "influence": "High",
+      "notes": "Process owners and decision makers"
+    },
+    {
+      "name": "End Users",
+      "description": "General system users across departments",
+      "size": 200,
+      "influence": "Medium",
+      "notes": "Daily transaction processing"
+    },
+    {
+      "name": "Executive Leadership",
+      "description": "C-suite and senior management",
+      "size": 10,
+      "influence": "High",
+      "notes": "Strategic oversight and approval authority"
+    }
+  ],
+  "organization_units": [
+    {
+      "name": "Finance Department",
+      "description": "Financial operations and accounting",
+      "parent_unit": "",
+      "head_of_unit": "",
+      "notes": ""
+    },
+    {
+      "name": "Procurement Department",
+      "description": "Purchasing and supply chain",
+      "parent_unit": "",
+      "head_of_unit": "",
+      "notes": ""
+    },
+    {
+      "name": "IT Department",
+      "description": "Information technology services",
+      "parent_unit": "",
+      "head_of_unit": "",
+      "notes": ""
+    },
+    {
+      "name": "Operations",
+      "description": "Core business operations",
+      "parent_unit": "",
+      "head_of_unit": "",
+      "notes": ""
+    }
+  ],
+  "business_processes": [
+    {
+      "name": "Procure to Pay",
+      "description": "End-to-end procurement and payment process",
+      "process_owner": "",
+      "criticality": "High",
+      "notes": "Critical business process"
+    },
+    {
+      "name": "Order to Cash",
+      "description": "Sales order processing through payment receipt",
+      "process_owner": "",
+      "criticality": "High",
+      "notes": "Revenue-generating process"
+    },
+    {
+      "name": "Record to Report",
+      "description": "Financial close and reporting cycle",
+      "process_owner": "",
+      "criticality": "High",
+      "notes": "Regulatory compliance requirement"
+    },
+    {
+      "name": "Inventory Management",
+      "description": "Stock tracking and warehouse operations",
+      "process_owner": "",
+      "criticality": "Medium",
+      "notes": ""
+    }
+  ],
+  "systems": [
+    {
+      "name": "Legacy ERP System",
+      "description": "Current enterprise system being replaced",
+      "system_owner": "",
+      "vendor": "",
+      "criticality": "High",
+      "notes": "To be decommissioned"
+    },
+    {
+      "name": "New ERP System",
+      "description": "Target enterprise resource planning platform",
+      "system_owner": "",
+      "vendor": "",
+      "criticality": "Critical",
+      "notes": "Implementation target"
+    }
+  ],
+  "policies": [
+    {
+      "name": "Financial Controls Policy",
+      "description": "Segregation of duties and approval requirements",
+      "policy_owner": "",
+      "notes": "SOX compliance"
+    },
+    {
+      "name": "Data Security Policy",
+      "description": "Access controls and data protection standards",
+      "policy_owner": "",
+      "notes": "Information security"
+    }
+  ],
+  "impacts": [
+    {
+      "impact_number": "IMP-0001",
+      "title": "New system login and authentication process",
+      "description": "Users will need to learn new login credentials and authentication methods including multi-factor authentication (MFA).",
+      "area_of_change": "Technology",
+      "category": "Process Change",
+      "severity": "Medium",
+      "likelihood": "High",
+      "notes": "Training required for all users",
+      "stakeholder_groups": ["End Users", "IT Department"],
+      "organization_units": [],
+      "business_processes": [],
+      "systems": ["New ERP System"],
+      "policies": ["Data Security Policy"]
+    },
+    {
+      "impact_number": "IMP-0002",
+      "title": "Purchase requisition approval workflow changes",
+      "description": "New multi-level approval process with automated routing based on dollar thresholds and department codes.",
+      "area_of_change": "Process",
+      "category": "Process Change",
+      "severity": "High",
+      "likelihood": "High",
+      "notes": "Significant change to current manual process",
+      "stakeholder_groups": ["Procurement Team", "Operations Management"],
+      "organization_units": ["Procurement Department"],
+      "business_processes": ["Procure to Pay"],
+      "systems": ["New ERP System"],
+      "policies": ["Financial Controls Policy"]
+    },
+    {
+      "impact_number": "IMP-0003",
+      "title": "Real-time inventory visibility",
+      "description": "Transition from batch updates to real-time inventory tracking across all locations.",
+      "area_of_change": "Technology",
+      "category": "Capability Enhancement",
+      "severity": "Medium",
+      "likelihood": "High",
+      "notes": "Improved visibility but requires process discipline",
+      "stakeholder_groups": ["Operations Management", "End Users"],
+      "organization_units": ["Operations"],
+      "business_processes": ["Inventory Management"],
+      "systems": ["New ERP System"],
+      "policies": []
+    },
+    {
+      "impact_number": "IMP-0004",
+      "title": "Automated three-way match for invoice processing",
+      "description": "System will automatically match purchase orders, receipts, and invoices. Manual intervention only for exceptions.",
+      "area_of_change": "Process",
+      "category": "Process Change",
+      "severity": "High",
+      "likelihood": "High",
+      "notes": "Reduces manual effort but requires data accuracy",
+      "stakeholder_groups": ["Finance Team", "Procurement Team"],
+      "organization_units": ["Finance Department", "Procurement Department"],
+      "business_processes": ["Procure to Pay"],
+      "systems": ["New ERP System"],
+      "policies": ["Financial Controls Policy"]
+    },
+    {
+      "impact_number": "IMP-0005",
+      "title": "Month-end close timeline acceleration",
+      "description": "Financial close process compressed from 10 days to 5 days using automated reconciliations and reporting.",
+      "area_of_change": "Process",
+      "category": "Process Change",
+      "severity": "High",
+      "likelihood": "Medium",
+      "notes": "Requires process redesign and training",
+      "stakeholder_groups": ["Finance Team", "Executive Leadership"],
+      "organization_units": ["Finance Department"],
+      "business_processes": ["Record to Report"],
+      "systems": ["New ERP System"],
+      "policies": ["Financial Controls Policy"]
+    },
+    {
+      "impact_number": "IMP-0006",
+      "title": "Role-based access controls",
+      "description": "Granular security permissions based on job roles replacing current broad access model.",
+      "area_of_change": "Technology",
+      "category": "Policy Change",
+      "severity": "Medium",
+      "likelihood": "High",
+      "notes": "Enhanced security but may limit some current access",
+      "stakeholder_groups": ["IT Department", "End Users"],
+      "organization_units": ["IT Department"],
+      "business_processes": [],
+      "systems": ["New ERP System"],
+      "policies": ["Data Security Policy", "Financial Controls Policy"]
+    },
+    {
+      "impact_number": "IMP-0007",
+      "title": "Vendor master data governance",
+      "description": "Centralized vendor management with data quality standards and approval workflows for new vendors.",
+      "area_of_change": "Process",
+      "category": "Process Change",
+      "severity": "Medium",
+      "likelihood": "High",
+      "notes": "Improves data quality but adds approval steps",
+      "stakeholder_groups": ["Procurement Team", "Finance Team"],
+      "organization_units": ["Procurement Department"],
+      "business_processes": ["Procure to Pay"],
+      "systems": ["New ERP System"],
+      "policies": []
+    },
+    {
+      "impact_number": "IMP-0008",
+      "title": "Mobile access for approvals",
+      "description": "Managers can review and approve transactions via mobile app instead of desktop only.",
+      "area_of_change": "Technology",
+      "category": "Capability Enhancement",
+      "severity": "Low",
+      "likelihood": "High",
+      "notes": "Positive change improving flexibility",
+      "stakeholder_groups": ["Operations Management", "Executive Leadership"],
+      "organization_units": [],
+      "business_processes": ["Procure to Pay", "Order to Cash"],
+      "systems": ["New ERP System"],
+      "policies": []
+    }
+  ],
+  "categories": [
+    "Process Change",
+    "Capability Enhancement",
+    "Policy Change",
+    "Technology Change"
+  ]
+}
