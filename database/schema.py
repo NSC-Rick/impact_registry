@@ -60,6 +60,9 @@ class ProjectMetadata(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+# Backward compatibility alias
+Project = ProjectMetadata
+
 class Impact(Base):
     __tablename__ = 'impacts'
     
