@@ -73,20 +73,41 @@ class WorkspaceService:
             # Create file path
             file_name = f"{name}.irp"
             file_path = Path(self.WORKSPACES_DIR) / file_name
-            print(f"Project file path: {file_path}")
+            print(f"[WORKSPACE] Project file path: {file_path}")
+            print(f"[WORKSPACE] Absolute path: {file_path.absolute()}")
             
             # Check if file already exists
             if file_path.exists():
-                print(f"ERROR: Project file already exists")
+                print(f"[ERROR] Project file already exists")
                 return False, f"Project '{name}' already exists", None
             
+            # Ensure workspace directory exists
+            workspace_dir = file_path.parent
+            print(f"[WORKSPACE] Ensuring directory exists: {workspace_dir.absolute()}")
+            workspace_dir.mkdir(parents=True, exist_ok=True)
+            
+            if not workspace_dir.exists():
+                print(f"[ERROR] Failed to create workspace directory")
+                return False, "Failed to create workspace directory", None
+            
+            print(f"[WORKSPACE] Directory confirmed: {workspace_dir.absolute()}")
+            
             # Create database
-            print("Initializing workspace...")
-            print("Creating database...")
+            print("[WORKSPACE] Initializing database...")
             engine = init_db(str(file_path))
-            print("Creating tables...")
+            
+            # Verify database file was created
+            if not file_path.exists():
+                print(f"[ERROR] Database file was not created: {file_path}")
+                return False, "Database file creation failed", None
+            
+            print(f"[WORKSPACE] Database file created: {file_path.absolute()}")
+            print(f"[WORKSPACE] Database file size: {file_path.stat().st_size} bytes")
+            
+            # Create session
+            print("[WORKSPACE] Creating database session...")
             session = get_session(engine)
-            print("Database initialized successfully")
+            print("[WORKSPACE] Database initialized successfully")
             
             # Create project metadata
             print("Creating project metadata...")

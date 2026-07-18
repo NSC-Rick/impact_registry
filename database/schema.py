@@ -194,21 +194,57 @@ def get_project_path(project_name):
     safe_name = safe_name.replace(' ', '_')
     return f'projects/{safe_name}.irp'
 
-def get_engine(project_name=None):
-    """Get database engine for a specific project workspace"""
-    if project_name is None:
+def get_engine(project_path=None):
+    """
+    Get database engine for a specific project workspace.
+    
+    Args:
+        project_path: Full path to database file, or None for legacy default
+        
+    Returns:
+        SQLAlchemy engine
+    """
+    if project_path is None:
         # Fallback for legacy code
         db_path = 'database/sqlite.db'
+    elif os.path.isabs(project_path) or '/' in project_path or '\\' in project_path:
+        # Full path or relative path with directory - use as-is
+        db_path = project_path
     else:
-        db_path = get_project_path(project_name)
+        # Just a name - use legacy projects/ directory
+        db_path = get_project_path(project_path)
     
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    # Ensure parent directory exists
+    db_dir = os.path.dirname(db_path)
+    if db_dir:  # Only create if there's a directory component
+        os.makedirs(db_dir, exist_ok=True)
+        print(f"[INIT] Workspace directory: {os.path.abspath(db_dir)}")
+    
+    print(f"[INIT] Database path: {os.path.abspath(db_path)}")
     return create_engine(f'sqlite:///{db_path}', echo=False)
 
-def init_db(project_name=None):
-    """Initialize database for a project workspace"""
-    engine = get_engine(project_name)
+def init_db(project_path=None):
+    """
+    Initialize database for a project workspace.
+    
+    Args:
+        project_path: Full path to database file, or None for legacy default
+        
+    Returns:
+        SQLAlchemy engine
+    """
+    print("[INIT] Initializing database...")
+    engine = get_engine(project_path)
+    
+    print("[INIT] Creating schema...")
     Base.metadata.create_all(engine)
+    
+    # Verify tables were created
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    tables = inspector.get_table_names()
+    print(f"[INIT] Schema created - {len(tables)} tables: {', '.join(tables)}")
+    
     return engine
 
 def get_session(engine):
