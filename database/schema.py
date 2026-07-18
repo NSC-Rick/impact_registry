@@ -241,15 +241,13 @@ def init_db(project_path=None):
     print("[INIT] Initializing database...")
     engine = get_engine(project_path)
     
-    # Verify database file exists
+    # Determine database file path for verification
     if project_path:
         db_path = project_path if os.path.isabs(project_path) or '/' in project_path or '\\' in project_path else get_project_path(project_path)
-        if not os.path.exists(db_path):
-            print(f"[ERROR] Database file does not exist: {db_path}")
-            raise RuntimeError(f"Database file not created: {db_path}")
-        print(f"[INIT] ✓ Database file exists: {os.path.abspath(db_path)}")
+    else:
+        db_path = 'database/sqlite.db'
     
-    # Execute schema creation
+    # Execute schema creation (this creates the SQLite file)
     print("[INIT] Executing Base.metadata.create_all(engine)...")
     try:
         Base.metadata.create_all(engine)
@@ -257,6 +255,16 @@ def init_db(project_path=None):
     except Exception as e:
         print(f"[ERROR] Schema creation failed: {e}")
         raise RuntimeError(f"Failed to create schema: {e}")
+    
+    # NOW verify database file was created
+    print(f"[INIT] Verifying database file creation...")
+    if not os.path.exists(db_path):
+        print(f"[ERROR] Database file was not created: {os.path.abspath(db_path)}")
+        raise RuntimeError(f"Database file not created: {db_path}")
+    
+    file_size = os.path.getsize(db_path)
+    print(f"[INIT] ✓ Database file created: {os.path.abspath(db_path)}")
+    print(f"[INIT] ✓ File size: {file_size} bytes")
     
     # Verify tables were created
     print("[INIT] Verifying schema...")
