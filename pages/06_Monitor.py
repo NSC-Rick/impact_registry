@@ -5,8 +5,6 @@ from database.schema import init_db, get_session, get_engine, ProjectMetadata
 from services.repository import Repository
 from services.analytics import AnalyticsService
 
-st.set_page_config(page_title="Monitor", page_icon="📈", layout="wide")
-
 # Check for active project workspace
 if 'current_project' not in st.session_state or st.session_state['current_project'] is None:
     st.warning("⚠️ Please open a project workspace first")

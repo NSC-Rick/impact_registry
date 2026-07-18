@@ -6,14 +6,7 @@ from database.schema import get_session, get_engine, ProjectMetadata
 from services.workspace_service import WorkspaceService
 from services.project_context import ProjectContext
 
-st.set_page_config(
-    page_title="Impact Registry - Home",
-    page_icon="�",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-st.title("� Impact Registry")
+st.title("🏠 Impact Registry")
 st.markdown("### Home")
 
 # Initialize workspace service

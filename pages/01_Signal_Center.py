@@ -1,7 +1,5 @@
 import streamlit as st
 
-st.set_page_config(page_title="Signal Center", page_icon="📡", layout="wide")
-
 from database.schema import get_session, get_engine
 from signal_center.signal_dashboard import SignalDashboard
 from signal_center.sensor_models import SensorStatus, SignalPriority
