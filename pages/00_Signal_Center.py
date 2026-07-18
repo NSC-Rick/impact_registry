@@ -1,10 +1,18 @@
 import streamlit as st
-import plotly.graph_objects as go
+
+st.set_page_config(page_title="Signal Center", page_icon="📡", layout="wide")
+
 from database.schema import get_session, get_engine
 from signal_center.signal_dashboard import SignalDashboard
 from signal_center.sensor_models import SensorStatus, SignalPriority
 
-st.set_page_config(page_title="Signal Center", page_icon="📡", layout="wide")
+# Try to import Plotly, but don't fail if unavailable
+try:
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+    st.warning("⚠️ Plotly not available. Using standard metrics instead of gauges.")
 
 # Check for active project workspace
 if 'current_project' not in st.session_state or st.session_state['current_project'] is None:
@@ -19,10 +27,27 @@ session = get_session(engine)
 st.title("📡 Change Impact Signal Center")
 st.markdown("### What deserves your attention right now?")
 
-# Generate dashboard
-with st.spinner("Reading sensors..."):
-    signal_dashboard = SignalDashboard(session)
-    dashboard = signal_dashboard.generate_dashboard()
+# Generate dashboard with error handling
+try:
+    with st.spinner("Reading sensors..."):
+        signal_dashboard = SignalDashboard(session)
+        dashboard = signal_dashboard.generate_dashboard()
+except Exception as e:
+    st.error(f"⚠️ Unable to generate Signal Center dashboard: {str(e)}")
+    st.info("The Signal Center requires registry data to function. Please ensure your project has been initialized correctly.")
+    st.markdown("---")
+    st.markdown("### Quick Actions")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("📝 Capture Impacts", use_container_width=True):
+            st.switch_page("pages/02_Capture.py")
+    with col2:
+        if st.button("🔧 Setup", use_container_width=True):
+            st.switch_page("pages/01_Setup.py")
+    with col3:
+        if st.button("🏠 Home", use_container_width=True):
+            st.switch_page("app.py")
+    st.stop()
 
 # Registry Health Header
 st.markdown("---")
@@ -32,39 +57,58 @@ col1, col2, col3 = st.columns([2, 1, 1])
 with col1:
     st.markdown("## Registry Health")
     
-    # Create gauge chart for registry health
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number+delta",
-        value=dashboard.registry_health_score,
-        domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': f"Grade: {dashboard.registry_health_grade}", 'font': {'size': 24}},
-        delta={'reference': 80, 'increasing': {'color': "green"}},
-        gauge={
-            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
-            'bar': {'color': "darkblue"},
-            'bgcolor': "white",
-            'borderwidth': 2,
-            'bordercolor': "gray",
-            'steps': [
-                {'range': [0, 60], 'color': '#ffcccc'},
-                {'range': [60, 80], 'color': '#fff4cc'},
-                {'range': [80, 100], 'color': '#ccffcc'}
-            ],
-            'threshold': {
-                'line': {'color': "red", 'width': 4},
-                'thickness': 0.75,
-                'value': 90
-            }
-        }
-    ))
-    
-    fig.update_layout(
-        height=250,
-        margin=dict(l=20, r=20, t=50, b=20),
-        font={'size': 16}
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
+    # Try to create gauge chart, fall back to metrics if Plotly unavailable
+    if PLOTLY_AVAILABLE:
+        try:
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number+delta",
+                value=dashboard.registry_health_score,
+                domain={'x': [0, 1], 'y': [0, 1]},
+                title={'text': f"Grade: {dashboard.registry_health_grade}", 'font': {'size': 24}},
+                delta={'reference': 80, 'increasing': {'color': "green"}},
+                gauge={
+                    'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
+                    'bar': {'color': "darkblue"},
+                    'bgcolor': "white",
+                    'borderwidth': 2,
+                    'bordercolor': "gray",
+                    'steps': [
+                        {'range': [0, 60], 'color': '#ffcccc'},
+                        {'range': [60, 80], 'color': '#fff4cc'},
+                        {'range': [80, 100], 'color': '#ccffcc'}
+                    ],
+                    'threshold': {
+                        'line': {'color': "red", 'width': 4},
+                        'thickness': 0.75,
+                        'value': 90
+                    }
+                }
+            ))
+            
+            fig.update_layout(
+                height=250,
+                margin=dict(l=20, r=20, t=50, b=20),
+                font={'size': 16}
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+        except Exception as e:
+            # Graceful degradation if gauge rendering fails
+            st.error(f"Unable to render gauge: {str(e)}")
+            st.metric(
+                "Registry Health Score",
+                f"{dashboard.registry_health_score:.1f}/100",
+                help="Overall registry health score"
+            )
+            st.metric("Grade", dashboard.registry_health_grade)
+    else:
+        # Fallback to standard metrics when Plotly not available
+        st.metric(
+            "Registry Health Score",
+            f"{dashboard.registry_health_score:.1f}/100",
+            help="Overall registry health score"
+        )
+        st.metric("Grade", dashboard.registry_health_grade)
 
 with col2:
     st.markdown("### Status")
