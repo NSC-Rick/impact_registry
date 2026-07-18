@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from database.schema import get_engine, get_session, ProjectMetadata, init_db
 from services.project_context import ProjectContext, ActiveProject
 from services.project_registry import ProjectRegistry, ProjectRegistryEntry
+from services.workspace_validator import WorkspaceValidator
 
 
 class WorkspaceService:
@@ -128,6 +129,26 @@ class WorkspaceService:
             session.close()
             print("Database session closed")
             
+            # Validate workspace
+            print("Validating workspace...")
+            validator = WorkspaceValidator()
+            is_valid, validation_message, missing = validator.validate_workspace(str(file_path))
+            
+            if not is_valid:
+                print(f"ERROR: Workspace validation failed: {validation_message}")
+                print(f"Missing components: {missing}")
+                # Clean up failed workspace
+                if file_path.exists():
+                    file_path.unlink()
+                    print("Cleaned up invalid workspace")
+                return False, f"Workspace validation failed: {validation_message}", None
+            
+            print(f"✓ Workspace validation passed: {validation_message}")
+            
+            # Get workspace stats
+            stats = validator.get_workspace_stats(str(file_path))
+            print(f"Workspace stats: {stats}")
+            
             # Create registry entry
             print("Registering project...")
             registry_entry = ProjectRegistryEntry(
@@ -201,6 +222,18 @@ class WorkspaceService:
             file_path = Path(registry_entry.file_path)
             if not file_path.exists():
                 return False, f"Project file not found: {file_path}", None
+            
+            # Validate workspace before opening
+            validator = WorkspaceValidator()
+            is_valid, validation_message, missing = validator.validate_workspace(str(file_path))
+            
+            if not is_valid:
+                error_msg = (
+                    f"Workspace validation failed: {validation_message}\n\n"
+                    f"This project workspace may be corrupted or incomplete.\n\n"
+                    f"Missing components: {', '.join(missing) if missing else 'Unknown'}"
+                )
+                return False, error_msg, None
             
             # Load project metadata from database
             engine = get_engine(str(file_path))
