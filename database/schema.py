@@ -227,23 +227,94 @@ def init_db(project_path=None):
     """
     Initialize database for a project workspace.
     
+    Creates complete SQLite schema and verifies all required tables exist.
+    
     Args:
         project_path: Full path to database file, or None for legacy default
         
     Returns:
         SQLAlchemy engine
+        
+    Raises:
+        RuntimeError: If schema creation fails or required tables missing
     """
     print("[INIT] Initializing database...")
     engine = get_engine(project_path)
     
-    print("[INIT] Creating schema...")
-    Base.metadata.create_all(engine)
+    # Verify database file exists
+    if project_path:
+        db_path = project_path if os.path.isabs(project_path) or '/' in project_path or '\\' in project_path else get_project_path(project_path)
+        if not os.path.exists(db_path):
+            print(f"[ERROR] Database file does not exist: {db_path}")
+            raise RuntimeError(f"Database file not created: {db_path}")
+        print(f"[INIT] ✓ Database file exists: {os.path.abspath(db_path)}")
+    
+    # Execute schema creation
+    print("[INIT] Executing Base.metadata.create_all(engine)...")
+    try:
+        Base.metadata.create_all(engine)
+        print("[INIT] ✓ create_all() completed")
+    except Exception as e:
+        print(f"[ERROR] Schema creation failed: {e}")
+        raise RuntimeError(f"Failed to create schema: {e}")
     
     # Verify tables were created
+    print("[INIT] Verifying schema...")
     from sqlalchemy import inspect
     inspector = inspect(engine)
     tables = inspector.get_table_names()
-    print(f"[INIT] Schema created - {len(tables)} tables: {', '.join(tables)}")
+    
+    if not tables:
+        print("[ERROR] No tables found after create_all()")
+        raise RuntimeError("Schema creation failed - no tables created")
+    
+    print(f"[INIT] ✓ Schema verified - {len(tables)} tables created")
+    
+    # Define required tables
+    required_tables = {
+        'project_metadata',
+        'impacts',
+        'stakeholder_groups',
+        'organization_units',
+        'business_processes',
+        'systems',
+        'policies',
+        'settings'
+    }
+    
+    # Check for required tables
+    print("[INIT] Checking required tables:")
+    missing_tables = []
+    for table in sorted(required_tables):
+        if table in tables:
+            print(f"[INIT]   ✓ {table}")
+        else:
+            print(f"[INIT]   ✗ {table} - MISSING")
+            missing_tables.append(table)
+    
+    # Check for association tables
+    association_tables = [
+        'impact_stakeholder_groups',
+        'impact_organization_units',
+        'impact_business_processes',
+        'impact_systems',
+        'impact_policies'
+    ]
+    
+    print("[INIT] Checking association tables:")
+    for table in association_tables:
+        if table in tables:
+            print(f"[INIT]   ✓ {table}")
+        else:
+            print(f"[INIT]   ⚠ {table} - missing (optional)")
+    
+    # Fail if required tables missing
+    if missing_tables:
+        print(f"[ERROR] Required tables missing: {', '.join(missing_tables)}")
+        raise RuntimeError(f"Schema incomplete - missing required tables: {', '.join(missing_tables)}")
+    
+    print(f"[INIT] ✓ All required tables present")
+    print(f"[INIT] Complete table list: {', '.join(sorted(tables))}")
     
     return engine
 
