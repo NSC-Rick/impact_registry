@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-from database.schema import init_db, get_session, get_engine, ProjectMetadata
-from services.repository import Repository
-from services.analytics import AnalyticsService
+from database.schema import get_session, get_engine, ProjectMetadata
+from analysis.registry_analysis_engine import RegistryAnalysisEngine
 
 st.set_page_config(page_title="Analyze", page_icon="📊", layout="wide")
 
@@ -15,243 +14,305 @@ if 'current_project' not in st.session_state or st.session_state['current_projec
 current_project = st.session_state['current_project']
 engine = get_engine(current_project)
 session = get_session(engine)
-repo = Repository(session)
-analytics = AnalyticsService(session)
 
 # Get project metadata
 metadata = session.query(ProjectMetadata).first()
 
 st.title("📊 Analyze")
-st.markdown("### Understand Patterns and Risks")
+st.markdown("### Registry Quality & Health Analysis")
 st.success(f"📁 **{current_project}**")
 
-impacts = repo.list_impacts()
+# Initialize Registry Analysis Engine
+with st.spinner("Analyzing registry..."):
+    analysis_engine = RegistryAnalysisEngine(session)
+    health_result = analysis_engine.analyze_registry()
 
-if not impacts:
-    st.warning("⚠️ No impacts found. Please capture impacts first in the Capture page.")
-    st.stop()
+# Display Registry Health Score
+st.markdown("---")
 
-tab1, tab2, tab3, tab4 = st.tabs(["Summary", "Risk Matrix", "Coverage", "Traceability"])
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    st.metric(
+        "Registry Health",
+        f"{health_result.overall_score:.1f}",
+        help="Overall registry health score (0-100)"
+    )
+    if health_result.health_grade == "A":
+        st.success(f"Grade: {health_result.health_grade}")
+    elif health_result.health_grade == "B":
+        st.info(f"Grade: {health_result.health_grade}")
+    elif health_result.health_grade == "C":
+        st.warning(f"Grade: {health_result.health_grade}")
+    else:
+        st.error(f"Grade: {health_result.health_grade}")
+
+with col2:
+    st.metric(
+        "Data Integrity",
+        f"{health_result.integrity_score:.1f}",
+        help="Data quality and completeness (30% weight)"
+    )
+
+with col3:
+    st.metric(
+        "Coverage",
+        f"{health_result.coverage_score:.1f}",
+        help="Organizational coverage (25% weight)"
+    )
+
+with col4:
+    st.metric(
+        "Traceability",
+        f"{health_result.traceability_score:.1f}",
+        help="Relationship completeness (20% weight)"
+    )
+
+with col5:
+    st.metric(
+        "Freshness",
+        f"{health_result.freshness_score:.1f}",
+        help="Data recency (10% weight)"
+    )
+
+st.markdown("---")
+
+# Display Key Findings
+if health_result.critical_findings > 0 or health_result.high_findings > 0:
+    st.markdown("### ⚠️ Key Findings")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if health_result.critical_findings > 0:
+            st.error(f"🔴 {health_result.critical_findings} Critical Issue(s)")
+    with col2:
+        if health_result.high_findings > 0:
+            st.warning(f"🟠 {health_result.high_findings} High Priority Issue(s)")
+    with col3:
+        st.info(f"📋 {health_result.total_findings} Total Finding(s)")
+    
+    st.markdown("---")
+
+# Display Recommendations
+if health_result.recommendations:
+    st.markdown("### 💡 Recommendations")
+    for rec in health_result.recommendations:
+        st.markdown(f"- {rec}")
+    st.markdown("---")
+
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "Integrity",
+    "Coverage",
+    "Traceability",
+    "Distribution",
+    "Freshness"
+])
 
 with tab1:
-    st.subheader("Impact Summary")
+    st.subheader("Data Integrity Analysis")
+    st.markdown(f"**Score: {health_result.integrity_score:.1f}/100**")
     
-    summary = analytics.get_impact_summary(project_id)
+    integrity = health_result.integrity_result
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Total Records", integrity.total_records)
+    with col2:
+        st.metric("Records with Issues", integrity.records_with_issues)
+    
+    st.markdown("---")
+    
+    if integrity.missing_required_fields:
+        st.markdown("#### Missing Required Fields")
+        missing_df = pd.DataFrame([
+            {'Field': k, 'Missing Count': v}
+            for k, v in integrity.missing_required_fields.items()
+        ])
+        st.dataframe(missing_df, use_container_width=True, hide_index=True)
+    
+    if integrity.duplicate_impacts:
+        st.markdown("#### Duplicate Impact Numbers")
+        st.warning(f"{len(integrity.duplicate_impacts)} duplicate impact number(s) found")
+        for dup in integrity.duplicate_impacts[:5]:
+            st.caption(f"Impact Number: {dup['impact_number']} ({dup['count']} records)")
+    
+    if integrity.duplicate_assets:
+        st.markdown("#### Duplicate Assets")
+        for asset_type, duplicates in integrity.duplicate_assets.items():
+            st.warning(f"{len(duplicates)} duplicate {asset_type.replace('_', ' ')}")
+    
+    if integrity.findings:
+        st.markdown("#### Integrity Findings")
+        for finding in integrity.findings:
+            severity_icon = {"Critical": "🔴", "High": "🟠", "Medium": "🟡", "Low": "🔵", "Info": "ℹ️"}
+            icon = severity_icon.get(finding.severity, "")
+            with st.expander(f"{icon} {finding.title}"):
+                st.markdown(f"**Category:** {finding.category}")
+                st.markdown(f"**Description:** {finding.description}")
+                if finding.recommendation:
+                    st.info(f"💡 **Recommendation:** {finding.recommendation}")
+
+with tab2:
+    st.subheader("Coverage Analysis")
+    st.markdown(f"**Score: {health_result.coverage_score:.1f}/100**")
+    
+    coverage = health_result.coverage_result
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Total Impacts", summary['total'])
+        st.metric("Total Impacts", coverage.total_impacts)
     with col2:
-        draft_count = summary['by_status'].get('Draft', 0)
-        st.metric("Draft", draft_count)
+        st.metric("With Stakeholders", coverage.impacts_with_stakeholders)
     with col3:
-        approved_count = summary['by_status'].get('Approved', 0)
-        st.metric("Approved", approved_count)
+        st.metric("With Org Units", coverage.impacts_with_org_units)
     with col4:
-        closed_count = summary['by_status'].get('Closed', 0)
-        st.metric("Closed", closed_count)
+        st.metric("With Processes", coverage.impacts_with_processes)
+    
+    st.markdown("---")
+    
+    if coverage.stakeholder_coverage:
+        st.markdown("#### Stakeholder Group Coverage")
+        sg_df = pd.DataFrame([
+            {'Stakeholder Group': k, 'Impact Count': v}
+            for k, v in coverage.stakeholder_coverage.items()
+        ]).sort_values('Impact Count', ascending=False)
+        st.dataframe(sg_df, use_container_width=True, hide_index=True)
+    
+    if coverage.uncovered_stakeholders:
+        st.warning(f"⚠️ {len(coverage.uncovered_stakeholders)} stakeholder group(s) without impacts")
+        with st.expander("View uncovered stakeholder groups"):
+            for sg in coverage.uncovered_stakeholders:
+                st.caption(f"- {sg}")
+    
+    if coverage.uncovered_org_units:
+        st.warning(f"⚠️ {len(coverage.uncovered_org_units)} organization unit(s) without impacts")
+        with st.expander("View uncovered organization units"):
+            for ou in coverage.uncovered_org_units:
+                st.caption(f"- {ou}")
+    
+    if coverage.findings:
+        st.markdown("#### Coverage Findings")
+        for finding in coverage.findings:
+            severity_icon = {"Critical": "🔴", "High": "🟠", "Medium": "🟡", "Low": "🔵", "Info": "ℹ️"}
+            icon = severity_icon.get(finding.severity, "")
+            with st.expander(f"{icon} {finding.title}"):
+                st.markdown(f"**Description:** {finding.description}")
+                if finding.recommendation:
+                    st.info(f"💡 **Recommendation:** {finding.recommendation}")
+
+with tab3:
+    st.subheader("Traceability Analysis")
+    st.markdown(f"**Score: {health_result.traceability_score:.1f}/100**")
+    
+    traceability = health_result.traceability_result
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Impacts", traceability.total_impacts)
+    with col2:
+        st.metric("Without Stakeholders", traceability.impacts_without_stakeholders)
+    with col3:
+        st.metric("Without Assets", traceability.impacts_without_assets)
+    with col4:
+        st.metric("Without Category", traceability.impacts_without_category)
+    
+    st.markdown("---")
+    
+    if traceability.orphaned_impact_ids:
+        st.error(f"🔴 {len(traceability.orphaned_impact_ids)} orphaned impact(s) with no relationships")
+        st.caption("These impacts have no links to stakeholders, org units, processes, systems, or policies.")
+    
+    if traceability.findings:
+        st.markdown("#### Traceability Findings")
+        for finding in traceability.findings:
+            severity_icon = {"Critical": "🔴", "High": "🟠", "Medium": "🟡", "Low": "🔵", "Info": "ℹ️"}
+            icon = severity_icon.get(finding.severity, "")
+            with st.expander(f"{icon} {finding.title}"):
+                st.markdown(f"**Description:** {finding.description}")
+                if finding.affected_records:
+                    st.caption(f"Affected Records: {len(finding.affected_records)} impact(s)")
+                if finding.recommendation:
+                    st.info(f"💡 **Recommendation:** {finding.recommendation}")
+
+with tab4:
+    st.subheader("Distribution Analysis")
+    
+    distribution = health_result.distribution_result
+    
+    st.metric("Total Impacts", distribution.total_impacts)
     
     st.markdown("---")
     
     col1, col2 = st.columns(2)
     
     with col1:
+        st.markdown("#### By Severity")
+        if distribution.by_severity:
+            severity_df = pd.DataFrame([
+                {'Severity': k, 'Count': v}
+                for k, v in distribution.by_severity.items()
+            ])
+            st.bar_chart(severity_df.set_index('Severity'))
+            st.dataframe(severity_df, use_container_width=True, hide_index=True)
+    
+    with col2:
         st.markdown("#### By Category")
-        if summary['by_category']:
+        if distribution.by_category:
             category_df = pd.DataFrame([
-                {'Category': k or 'Unspecified', 'Count': v}
-                for k, v in summary['by_category'].items()
+                {'Category': k, 'Count': v}
+                for k, v in distribution.by_category.items()
             ])
             st.bar_chart(category_df.set_index('Category'))
             st.dataframe(category_df, use_container_width=True, hide_index=True)
-        else:
-            st.info("No category data available")
-    
-    with col2:
-        st.markdown("#### By Severity")
-        if summary['by_severity']:
-            severity_df = pd.DataFrame([
-                {'Severity': k or 'Unspecified', 'Count': v}
-                for k, v in summary['by_severity'].items()
-            ])
-            
-            severity_order = ['Critical', 'High', 'Medium', 'Low', 'Unspecified']
-            severity_df['Order'] = severity_df['Severity'].apply(
-                lambda x: severity_order.index(x) if x in severity_order else 999
-            )
-            severity_df = severity_df.sort_values('Order').drop('Order', axis=1)
-            
-            st.bar_chart(severity_df.set_index('Severity'))
-            st.dataframe(severity_df, use_container_width=True, hide_index=True)
-        else:
-            st.info("No severity data available")
-
-with tab2:
-    st.subheader("Risk Matrix")
-    st.markdown("Impacts plotted by Severity and Likelihood")
-    
-    risk_matrix = analytics.get_risk_matrix(project_id)
-    
-    if risk_matrix:
-        matrix_df = pd.DataFrame(risk_matrix, columns=['ID', 'Number', 'Description', 'Severity', 'Likelihood'])
-        
-        severity_map = {'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4}
-        likelihood_map = {'Low': 1, 'Medium': 2, 'High': 3}
-        
-        matrix_df['Severity_Num'] = matrix_df['Severity'].map(severity_map)
-        matrix_df['Likelihood_Num'] = matrix_df['Likelihood'].map(likelihood_map)
-        
-        st.markdown("#### Risk Distribution")
-        
-        risk_counts = matrix_df.groupby(['Severity', 'Likelihood']).size().reset_index(name='Count')
-        
-        pivot_table = risk_counts.pivot(index='Severity', columns='Likelihood', values='Count').fillna(0)
-        
-        severity_order = ['Critical', 'High', 'Medium', 'Low']
-        likelihood_order = ['Low', 'Medium', 'High']
-        
-        pivot_table = pivot_table.reindex(severity_order, fill_value=0)
-        pivot_table = pivot_table.reindex(columns=likelihood_order, fill_value=0)
-        
-        st.dataframe(pivot_table, use_container_width=True)
-        
-        st.markdown("#### High Risk Impacts")
-        high_risk = matrix_df[
-            (matrix_df['Severity_Num'] >= 3) & (matrix_df['Likelihood_Num'] >= 2)
-        ].sort_values(['Severity_Num', 'Likelihood_Num'], ascending=False)
-        
-        if not high_risk.empty:
-            for _, row in high_risk.iterrows():
-                with st.expander(f"**{row['Number']}** - {row['Description']}"):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("Severity", row['Severity'])
-                    with col2:
-                        st.metric("Likelihood", row['Likelihood'])
-                    
-                    if st.button(f"View Details", key=f"view_{row['ID']}"):
-                        st.session_state['edit_impact_id'] = row['ID']
-                        st.switch_page("pages/03_Enrich.py")
-        else:
-            st.success("✅ No high-risk impacts identified")
-    else:
-        st.info("No impacts with both Severity and Likelihood specified")
-
-with tab3:
-    st.subheader("Coverage Metrics")
-    st.markdown("Track how well impacts are enriched with traceability")
-    
-    coverage = analytics.get_coverage_metrics(project_id)
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Impacts", coverage['total_impacts'])
-    with col2:
-        st.metric("Enriched Impacts", coverage['enriched_impacts'])
-    with col3:
-        st.metric("Coverage %", f"{coverage['coverage_percentage']}%")
     
     st.markdown("---")
     
-    st.markdown("#### Enrichment Breakdown")
+    st.markdown("#### By Status")
+    if distribution.by_status:
+        status_df = pd.DataFrame([
+            {'Status': k, 'Count': v}
+            for k, v in distribution.by_status.items()
+        ])
+        st.dataframe(status_df, use_container_width=True, hide_index=True)
     
-    enrichment_data = pd.DataFrame([
-        {'Asset Type': 'Stakeholder Groups', 'Count': coverage['with_stakeholder_groups']},
-        {'Asset Type': 'Organization Units', 'Count': coverage['with_organization_units']},
-        {'Asset Type': 'Business Processes', 'Count': coverage['with_business_processes']},
-        {'Asset Type': 'Systems', 'Count': coverage['with_systems']},
-        {'Asset Type': 'Policies', 'Count': coverage['with_policies']}
-    ])
-    
-    st.bar_chart(enrichment_data.set_index('Asset Type'))
-    st.dataframe(enrichment_data, use_container_width=True, hide_index=True)
-    
-    if coverage['coverage_percentage'] < 50:
-        st.warning("⚠️ Coverage is below 50%. Consider enriching more impacts with traceability.")
-    elif coverage['coverage_percentage'] < 80:
-        st.info("📈 Good progress! Continue enriching impacts to improve coverage.")
-    else:
-        st.success("✅ Excellent coverage! Most impacts have traceability.")
+    if distribution.hotspots:
+        st.markdown("#### Impact Hotspots")
+        st.info("Areas with high concentration of impacts")
+        for hotspot in distribution.hotspots:
+            st.markdown(f"- **{hotspot['dimension']}:** {hotspot['value']} ({hotspot['count']} impacts, {hotspot['percentage']}%)")
 
-with tab4:
-    st.subheader("Traceability Analysis")
-    st.markdown("Understand which enterprise assets are most affected")
+with tab5:
+    st.subheader("Freshness Analysis")
+    st.markdown(f"**Score: {health_result.freshness_score:.1f}/100**")
     
-    analysis_tab1, analysis_tab2, analysis_tab3 = st.tabs([
-        "Stakeholder Groups", "Business Processes", "Systems"
-    ])
+    freshness = health_result.freshness_result
     
-    with analysis_tab1:
-        st.markdown("#### Impacts by Stakeholder Group")
-        sg_counts = analytics.get_stakeholder_impact_count(project_id)
-        
-        if sg_counts:
-            sg_df = pd.DataFrame(sg_counts, columns=['Stakeholder Group', 'Impact Count'])
-            sg_df = sg_df.sort_values('Impact Count', ascending=False)
-            
-            st.bar_chart(sg_df.set_index('Stakeholder Group'))
-            st.dataframe(sg_df, use_container_width=True, hide_index=True)
-            
-            top_sg = sg_df.iloc[0]
-            st.info(f"📌 Most affected: **{top_sg['Stakeholder Group']}** with {top_sg['Impact Count']} impacts")
-        else:
-            st.info("No stakeholder group traceability data available")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Impacts", freshness.total_impacts)
+    with col2:
+        st.metric("Created (7 days)", freshness.recently_created)
+    with col3:
+        st.metric("Modified (7 days)", freshness.recently_modified)
+    with col4:
+        st.metric("Stale (30+ days)", freshness.stale_impacts)
     
-    with analysis_tab2:
-        st.markdown("#### Impacts by Business Process")
-        bp_counts = analytics.get_process_impact_count(project_id)
-        
-        if bp_counts:
-            bp_df = pd.DataFrame(bp_counts, columns=['Business Process', 'Impact Count'])
-            bp_df = bp_df.sort_values('Impact Count', ascending=False)
-            
-            st.bar_chart(bp_df.set_index('Business Process'))
-            st.dataframe(bp_df, use_container_width=True, hide_index=True)
-            
-            top_bp = bp_df.iloc[0]
-            st.info(f"📌 Most affected: **{top_bp['Business Process']}** with {top_bp['Impact Count']} impacts")
-        else:
-            st.info("No business process traceability data available")
+    st.markdown("---")
     
-    with analysis_tab3:
-        st.markdown("#### Impacts by System")
-        sys_counts = analytics.get_system_impact_count(project_id)
-        
-        if sys_counts:
-            sys_df = pd.DataFrame(sys_counts, columns=['System', 'Impact Count'])
-            sys_df = sys_df.sort_values('Impact Count', ascending=False)
-            
-            st.bar_chart(sys_df.set_index('System'))
-            st.dataframe(sys_df, use_container_width=True, hide_index=True)
-            
-            top_sys = sys_df.iloc[0]
-            st.info(f"📌 Most affected: **{top_sys['System']}** with {top_sys['Impact Count']} impacts")
-        else:
-            st.info("No system traceability data available")
+    st.metric("Average Age (days)", f"{freshness.average_age_days:.1f}")
+    
+    if freshness.stale_impacts > 0:
+        st.warning(f"⚠️ {freshness.stale_impacts} impact(s) not updated in 30+ days")
+    
+    if freshness.findings:
+        st.markdown("#### Freshness Findings")
+        for finding in freshness.findings:
+            severity_icon = {"Critical": "🔴", "High": "🟠", "Medium": "🟡", "Low": "🔵", "Info": "ℹ️"}
+            icon = severity_icon.get(finding.severity, "")
+            with st.expander(f"{icon} {finding.title}"):
+                st.markdown(f"**Description:** {finding.description}")
+                if finding.recommendation:
+                    st.info(f"💡 **Recommendation:** {finding.recommendation}")
 
 st.markdown("---")
-st.markdown("### 💡 Analysis Insights")
-
-insights = []
-
-if summary['total'] < 10:
-    insights.append("📝 Consider capturing more impacts to get better analytical insights")
-elif summary['total'] >= 50:
-    insights.append("✅ Good impact coverage - you have sufficient data for meaningful analysis")
-
-if coverage['coverage_percentage'] < 30:
-    insights.append("🔗 Low traceability - enrich impacts with enterprise assets to improve analysis")
-
-draft_pct = (summary['by_status'].get('Draft', 0) / summary['total'] * 100) if summary['total'] > 0 else 0
-if draft_pct > 50:
-    insights.append(f"📋 {draft_pct:.0f}% of impacts are still in Draft status - consider reviewing and approving")
-
-high_severity = summary['by_severity'].get('High', 0) + summary['by_severity'].get('Critical', 0)
-if high_severity > 0:
-    insights.append(f"⚠️ {high_severity} high/critical severity impacts require attention")
-
-if insights:
-    for insight in insights:
-        st.markdown(f"- {insight}")
-else:
-    st.success("✅ Your impact registry is well-maintained!")
+st.caption(f"Analysis completed at: {health_result.analyzed_at.strftime('%Y-%m-%d %H:%M:%S')} UTC")
