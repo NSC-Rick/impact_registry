@@ -24,6 +24,10 @@ if 'projects_discovered' not in st.session_state:
     workspace.discover_projects()
     st.session_state['projects_discovered'] = True
 
+if ProjectContext.has_active_project():
+    # Redirect to Signal Center when project is active
+    st.switch_page("pages/00_Signal_Center.py")
+
 if not ProjectContext.has_active_project():
     st.markdown("---")
     
