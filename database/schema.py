@@ -247,6 +247,11 @@ def init_db(project_path=None):
     else:
         db_path = 'database/sqlite.db'
     
+    # Verify Base.metadata has tables registered
+    print(f"[INIT] Base.metadata contains {len(Base.metadata.tables)} table definitions:")
+    for table_name in sorted(Base.metadata.tables.keys()):
+        print(f"[INIT]   - {table_name}")
+    
     # Execute schema creation (this creates the SQLite file)
     print("[INIT] Executing Base.metadata.create_all(engine)...")
     try:
@@ -278,7 +283,7 @@ def init_db(project_path=None):
     
     print(f"[INIT] ✓ Schema verified - {len(tables)} tables created")
     
-    # Define required tables
+    # Define required tables (must match actual Base models)
     required_tables = {
         'project_metadata',
         'impacts',
@@ -287,7 +292,8 @@ def init_db(project_path=None):
         'business_processes',
         'systems',
         'policies',
-        'settings'
+        'source_evidences',
+        'change_assets'
     }
     
     # Check for required tables
