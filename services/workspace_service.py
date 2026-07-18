@@ -146,7 +146,18 @@ class WorkspaceService:
             return True, f"Project '{name}' created successfully", active_project
             
         except Exception as e:
-            return False, f"Error creating project: {str(e)}", None
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Project creation error:\n{error_details}")  # Log for developers
+            
+            # User-friendly message
+            user_message = (
+                "Project could not be created.\n\n"
+                "The workspace initialization encountered an unexpected error.\n\n"
+                "No project data has been saved.\n\n"
+                f"Technical details: {str(e)}"
+            )
+            return False, user_message, None
     
     def open_project(self, project_uuid: str) -> Tuple[bool, str, Optional[ActiveProject]]:
         """

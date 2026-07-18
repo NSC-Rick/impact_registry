@@ -265,6 +265,9 @@ class StarterLibraryService:
             return True, f"Library '{library.name}' applied successfully", stats
         
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Library application error:\n{error_details}")  # Log for developers
             session.rollback()
             return False, f"Error applying library: {str(e)}", {}
     

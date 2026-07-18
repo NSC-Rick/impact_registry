@@ -7,14 +7,14 @@ from services.workspace_service import WorkspaceService
 from services.project_context import ProjectContext
 
 st.set_page_config(
-    page_title="Impact Registry - Project Workspace",
-    page_icon="🎯",
+    page_title="Impact Registry - Home",
+    page_icon="�",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-st.title("🎯 Impact Registry")
-st.markdown("### Project Workspace Management")
+st.title("� Impact Registry")
+st.markdown("### Home")
 
 # Initialize workspace service
 workspace = WorkspaceService()
@@ -24,8 +24,8 @@ if 'projects_discovered' not in st.session_state:
     workspace.discover_projects()
     st.session_state['projects_discovered'] = True
 
-if ProjectContext.has_active_project():
-    # Redirect to Signal Center when project is active
+if ProjectContext.has_active_project() and 'wizard_step' not in st.session_state:
+    # Redirect to Signal Center when project is active (but not during wizard)
     st.switch_page("pages/00_Signal_Center.py")
 
 if not ProjectContext.has_active_project():
@@ -448,4 +448,8 @@ else:
                 st.rerun()
 
 st.markdown("---")
-st.markdown("**Design Principles:** Practitioner First • Project Isolation • Coverage, not Execution • Traceability • Enterprise Assets • Carry Forward")
+col1, col2 = st.columns([3, 1])
+with col1:
+    st.markdown("**Design Principles:** Practitioner First • Project Isolation • Coverage, not Execution • Traceability • Enterprise Assets • Carry Forward")
+with col2:
+    st.markdown(f"**Version:** {workspace.APP_VERSION}")
