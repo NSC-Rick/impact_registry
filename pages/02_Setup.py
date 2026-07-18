@@ -30,7 +30,7 @@ tab1, tab2 = st.tabs(["Project", "Enterprise Assets"])
 
 with tab1:
     st.subheader("Current Project Workspace")
-    st.success(f"📁 **{current_project}**")
+    st.success(f"📁 **{active_project.name}**")
     
     if metadata:
         st.markdown("---")
