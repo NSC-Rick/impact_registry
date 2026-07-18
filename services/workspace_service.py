@@ -81,9 +81,8 @@ class WorkspaceService:
             
             # Create database
             print("Initializing workspace...")
-            engine = get_engine(str(file_path))
             print("Creating database...")
-            init_db(engine)
+            engine = init_db(str(file_path))
             print("Creating tables...")
             session = get_session(engine)
             print("Database initialized successfully")
