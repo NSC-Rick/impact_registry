@@ -17,6 +17,7 @@ from database.schema import get_engine, get_session, ProjectMetadata, init_db
 from services.project_context import ProjectContext, ActiveProject
 from services.project_registry import ProjectRegistry, ProjectRegistryEntry
 from services.workspace_validator import WorkspaceValidator
+from services.workspace_initializer import WorkspaceInitializer
 
 
 class WorkspaceService:
@@ -52,16 +53,39 @@ class WorkspaceService:
         starter_library_id: Optional[str] = None
     ) -> Tuple[bool, str, Optional[ActiveProject]]:
         """
-        Create a new project workspace.
+        Create a new project workspace using the initialization orchestrator.
         
         Args:
             name: Project name
             client: Client name
             description: Project description
             status: Project status
+            starter_library_id: Optional starter library to import
             
         Returns:
             Tuple of (success, message, active_project)
+        """
+        # Delegate to workspace initializer orchestrator
+        initializer = WorkspaceInitializer(self.WORKSPACES_DIR)
+        return initializer.initialize(
+            name=name,
+            client=client,
+            description=description,
+            status=status,
+            starter_library_id=starter_library_id
+        )
+    
+    def _legacy_create_new_project(
+        self,
+        name: str,
+        client: str = "",
+        description: str = "",
+        status: str = "Pre-Implementation",
+        starter_library_id: Optional[str] = None
+    ) -> Tuple[bool, str, Optional[ActiveProject]]:
+        """
+        Legacy create method - replaced by WorkspaceInitializer.
+        Kept for reference only.
         """
         try:
             print(f"\n=== Creating Project: {name} ===")

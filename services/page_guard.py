@@ -11,16 +11,31 @@ from services.workspace_validator import WorkspaceValidator
 
 def require_valid_workspace():
     """
-    Page guard that ensures a valid workspace is active.
+    Workspace guard - ensures a valid workspace is active before page loads.
     
     Call this at the top of every practitioner page.
+    
+    Validates:
+    - Active project exists
+    - Workspace file exists
+    - Database schema is complete
+    - Required tables present
+    - Project metadata exists
+    
     If validation fails, redirects to Home with error message.
     """
     # Check if project is active
     if not ProjectContext.has_active_project():
-        st.error("⚠️ No active project. Please open or create a project.")
-        st.info("Redirecting to Home...")
-        st.switch_page("pages/00_Home.py")
+        st.error("⚠️ No valid project workspace is currently available.")
+        st.info("""
+        **No Active Project**
+        
+        Please create a new project or open an existing project from the Home page.
+        """)
+        
+        if st.button("🏠 Go to Home", use_container_width=True):
+            st.switch_page("pages/00_Home.py")
+        
         st.stop()
     
     # Get active project
@@ -31,27 +46,42 @@ def require_valid_workspace():
     is_valid, message, missing = validator.validate_workspace(active_project.file_path)
     
     if not is_valid:
-        st.error(f"⚠️ Workspace validation failed: {message}")
+        st.error("⚠️ Workspace Validation Failed")
+        
+        st.warning(f"**Issue:** {message}")
         
         if missing:
-            st.warning(f"Missing components: {', '.join(missing)}")
+            st.error(f"**Missing Components:** {', '.join(missing)}")
         
         st.info("""
-        **Workspace initialization is incomplete.**
+        **Workspace Incomplete**
         
-        This project workspace may be corrupted or incomplete.
-        Please complete project creation or restore a valid project.
+        This project workspace is corrupted or incomplete.
+        The workspace initialization did not complete successfully.
+        
+        **Recommended Actions:**
+        1. Return to Home and create a new project
+        2. Or restore from a backup if available
         """)
         
         # Provide action buttons
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
             if st.button("🏠 Return to Home", use_container_width=True):
                 ProjectContext.clear_active_project()
                 st.switch_page("pages/00_Home.py")
         with col2:
-            if st.button("🔄 Try Again", use_container_width=True):
+            if st.button("🔄 Retry Validation", use_container_width=True):
                 st.rerun()
+        with col3:
+            if st.button("📋 View Details", use_container_width=True):
+                with st.expander("Validation Details", expanded=True):
+                    st.code(f"""
+Project: {active_project.name}
+File: {active_project.file_path}
+Status: {message}
+Missing: {missing if missing else 'None'}
+                    """)
         
         st.stop()
     
