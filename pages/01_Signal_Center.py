@@ -312,5 +312,5 @@ with col4:
         st.switch_page("pages/06_Monitor.py")
 
 st.markdown("---")
-st.caption(f"📁 Project: {current_project}")
+st.caption(f"📁 Project: {active_project.name}")
 st.caption("Signal Center provides real-time registry health monitoring. Sensors update automatically based on current registry state.")
