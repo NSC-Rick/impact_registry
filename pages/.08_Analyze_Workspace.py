@@ -582,7 +582,7 @@ with tab4:
                 with col2:
                     if st.button(f"📊 Details", key=f"details_{impact.id}"):
                         st.session_state['edit_impact_id'] = impact.id
-                        st.switch_page("pages/03_Enrich.py")
+                        st.switch_page("pages/04_Enrich.py")
     else:
         st.info("No impacts match the current filters")
 

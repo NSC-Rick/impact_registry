@@ -386,7 +386,7 @@ with tab2:
                 with col1:
                     if st.button(f"✏️ Edit", key=f"edit_{impact.id}"):
                         st.session_state['edit_impact_id'] = impact.id
-                        st.switch_page("pages/03_Enrich.py")
+                        st.switch_page("pages/04_Enrich.py")
                 
                 with col2:
                     if impact.status == "Draft" and st.button(f"✅ Approve", key=f"approve_{impact.id}"):

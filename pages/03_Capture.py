@@ -271,11 +271,11 @@ with tab3:
                 with col1:
                     if st.button(f"✏️ Edit", key=f"edit_{impact.id}"):
                         st.session_state['edit_impact_id'] = impact.id
-                        st.switch_page("pages/03_Enrich.py")
+                        st.switch_page("pages/04_Enrich.py")
                 with col2:
                     if st.button(f"🔍 Analyze", key=f"analyze_{impact.id}"):
                         st.session_state['analyze_impact_id'] = impact.id
-                        st.switch_page("pages/04_Analyze.py")
+                        st.switch_page("pages/05_Analyze.py")
                 with col3:
                     if st.button(f"🗑️ Delete", key=f"delete_{impact.id}"):
                         if repo.delete_impact(impact.id):

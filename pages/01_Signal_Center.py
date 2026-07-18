@@ -40,13 +40,13 @@ except Exception as e:
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("📝 Capture Impacts", use_container_width=True):
-            st.switch_page("pages/02_Capture.py")
+            st.switch_page("pages/03_Capture.py")
     with col2:
         if st.button("🔧 Setup", use_container_width=True):
-            st.switch_page("pages/01_Setup.py")
+            st.switch_page("pages/02_Setup.py")
     with col3:
         if st.button("🏠 Home", use_container_width=True):
-            st.switch_page("app.py")
+            st.switch_page("pages/00_Home.py")
     st.stop()
 
 # Registry Health Header
@@ -154,7 +154,7 @@ with col1:
     
     if st.button("View Details", key="integrity_details"):
         st.session_state['sensor_drill_down'] = 'integrity'
-        st.switch_page("pages/04_Analyze.py")
+        st.switch_page("pages/05_Analyze.py")
 
 with col2:
     coverage = dashboard.coverage_reading
@@ -171,7 +171,7 @@ with col2:
     
     if st.button("View Details", key="coverage_details"):
         st.session_state['sensor_drill_down'] = 'coverage'
-        st.switch_page("pages/04_Analyze.py")
+        st.switch_page("pages/05_Analyze.py")
 
 with col3:
     traceability = dashboard.traceability_reading
@@ -188,7 +188,7 @@ with col3:
     
     if st.button("View Details", key="traceability_details"):
         st.session_state['sensor_drill_down'] = 'traceability'
-        st.switch_page("pages/04_Analyze.py")
+        st.switch_page("pages/05_Analyze.py")
 
 st.markdown("---")
 
@@ -208,7 +208,7 @@ with col1:
     
     if st.button("View Details", key="ownership_details"):
         st.session_state['sensor_drill_down'] = 'ownership'
-        st.switch_page("pages/04_Analyze.py")
+        st.switch_page("pages/05_Analyze.py")
 
 with col2:
     distribution = dashboard.distribution_reading
@@ -231,7 +231,7 @@ with col2:
     
     if st.button("View Details", key="distribution_details"):
         st.session_state['sensor_drill_down'] = 'distribution'
-        st.switch_page("pages/04_Analyze.py")
+        st.switch_page("pages/05_Analyze.py")
 
 with col3:
     freshness = dashboard.freshness_reading
@@ -248,7 +248,7 @@ with col3:
     
     if st.button("View Details", key="freshness_details"):
         st.session_state['sensor_drill_down'] = 'freshness'
-        st.switch_page("pages/04_Analyze.py")
+        st.switch_page("pages/05_Analyze.py")
 
 st.markdown("---")
 
@@ -287,19 +287,19 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     if st.button("📝 Capture Impacts", use_container_width=True):
-        st.switch_page("pages/02_Capture.py")
+        st.switch_page("pages/03_Capture.py")
 
 with col2:
     if st.button("🔗 Enrich Impacts", use_container_width=True):
-        st.switch_page("pages/03_Enrich.py")
+        st.switch_page("pages/04_Enrich.py")
 
 with col3:
     if st.button("📊 View Analysis", use_container_width=True):
-        st.switch_page("pages/04_Analyze.py")
+        st.switch_page("pages/05_Analyze.py")
 
 with col4:
     if st.button("📈 Monitor Progress", use_container_width=True):
-        st.switch_page("pages/05_Monitor.py")
+        st.switch_page("pages/06_Monitor.py")
 
 st.markdown("---")
 st.caption(f"📁 Project: {current_project}")
