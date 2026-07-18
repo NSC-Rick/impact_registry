@@ -24,10 +24,28 @@ if 'projects_discovered' not in st.session_state:
     workspace.discover_projects()
     st.session_state['projects_discovered'] = True
 
-if ProjectContext.has_active_project() and 'wizard_step' not in st.session_state:
-    # Redirect to Signal Center when project is active (but not during wizard)
-    st.switch_page("pages/00_Signal_Center.py")
+# Display current project info if active
+if ProjectContext.has_active_project():
+    active_project = ProjectContext.get_active_project()
+    st.info(f"📂 **Current Project:** {active_project.name}")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        if st.button("📡 Signal Center", use_container_width=True):
+            st.switch_page("pages/00_Signal_Center.py")
+    with col2:
+        if st.button("✍️ Capture", use_container_width=True):
+            st.switch_page("pages/02_Capture.py")
+    with col3:
+        if st.button("🔗 Enrich", use_container_width=True):
+            st.switch_page("pages/03_Enrich.py")
+    with col4:
+        if st.button("📊 Analyze", use_container_width=True):
+            st.switch_page("pages/04_Analyze.py")
+    
+    st.markdown("---")
 
+# Show welcome section if no active project
 if not ProjectContext.has_active_project():
     st.markdown("---")
     

@@ -124,6 +124,7 @@ class StarterLibraryService:
             Tuple of (success, message, stats)
         """
         try:
+            print(f"  Copying library data to project...")
             stats = {
                 'stakeholder_groups': 0,
                 'organization_units': 0,
@@ -141,6 +142,7 @@ class StarterLibraryService:
             pol_map = {}  # policy name -> ID
             
             # Import Stakeholder Groups
+            print(f"  Copying Stakeholder Groups...")
             for sg_template in library.stakeholder_groups:
                 sg = StakeholderGroup(
                     name=sg_template.name,
@@ -153,8 +155,10 @@ class StarterLibraryService:
                 session.flush()  # Get ID
                 sg_map[sg_template.name] = sg.id
                 stats['stakeholder_groups'] += 1
+            print(f"    {stats['stakeholder_groups']} stakeholder groups copied")
             
             # Import Organization Units
+            print(f"  Copying Organization Units...")
             for ou_template in library.organization_units:
                 ou = OrganizationUnit(
                     name=ou_template.name,
@@ -167,8 +171,10 @@ class StarterLibraryService:
                 session.flush()
                 ou_map[ou_template.name] = ou.id
                 stats['organization_units'] += 1
+            print(f"    {stats['organization_units']} organization units copied")
             
             # Import Business Processes
+            print(f"  Copying Business Processes...")
             for bp_template in library.business_processes:
                 bp = BusinessProcess(
                     name=bp_template.name,
@@ -181,8 +187,10 @@ class StarterLibraryService:
                 session.flush()
                 bp_map[bp_template.name] = bp.id
                 stats['business_processes'] += 1
+            print(f"    {stats['business_processes']} business processes copied")
             
             # Import Systems
+            print(f"  Copying Systems...")
             for sys_template in library.systems:
                 sys = System(
                     name=sys_template.name,
@@ -196,8 +204,10 @@ class StarterLibraryService:
                 session.flush()
                 sys_map[sys_template.name] = sys.id
                 stats['systems'] += 1
+            print(f"    {stats['systems']} systems copied")
             
             # Import Policies
+            print(f"  Copying Policies...")
             for pol_template in library.policies:
                 pol = Policy(
                     name=pol_template.name,
@@ -209,8 +219,10 @@ class StarterLibraryService:
                 session.flush()
                 pol_map[pol_template.name] = pol.id
                 stats['policies'] += 1
+            print(f"    {stats['policies']} policies copied")
             
             # Import Impacts with relationships
+            print(f"  Copying Change Impacts...")
             for imp_template in library.impacts:
                 impact = Impact(
                     impact_number=imp_template.impact_number,
@@ -258,9 +270,12 @@ class StarterLibraryService:
                             impact.policies.append(pol)
                 
                 stats['impacts'] += 1
+            print(f"    {stats['impacts']} impacts copied")
             
             # Commit all changes
+            print(f"  Committing changes to database...")
             session.commit()
+            print(f"  Library data committed successfully")
             
             return True, f"Library '{library.name}' applied successfully", stats
         

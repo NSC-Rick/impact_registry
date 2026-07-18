@@ -63,23 +63,33 @@ class WorkspaceService:
             Tuple of (success, message, active_project)
         """
         try:
+            print(f"\n=== Creating Project: {name} ===")
+            
             # Generate UUID
             project_uuid = str(uuid_lib.uuid4())
+            print(f"Generated UUID: {project_uuid}")
             
             # Create file path
             file_name = f"{name}.irp"
             file_path = Path(self.WORKSPACES_DIR) / file_name
+            print(f"Project file path: {file_path}")
             
             # Check if file already exists
             if file_path.exists():
+                print(f"ERROR: Project file already exists")
                 return False, f"Project '{name}' already exists", None
             
             # Create database
+            print("Initializing workspace...")
             engine = get_engine(str(file_path))
+            print("Creating database...")
             init_db(engine)
+            print("Creating tables...")
             session = get_session(engine)
+            print("Database initialized successfully")
             
             # Create project metadata
+            print("Creating project metadata...")
             now = datetime.utcnow()
             metadata = ProjectMetadata(
                 project_uuid=project_uuid,
@@ -93,25 +103,34 @@ class WorkspaceService:
             )
             session.add(metadata)
             session.commit()
+            print("Project metadata created")
             
             # Apply starter library if specified
             if starter_library_id:
+                print(f"Loading starter library: {starter_library_id}")
                 from libraries.starter_library_service import StarterLibraryService
                 library_service = StarterLibraryService()
                 library = library_service.load_library(starter_library_id)
                 
                 if library:
+                    print(f"Applying library '{library.name}' to project...")
                     success, message, stats = library_service.apply_library_to_project(library, session)
                     if not success:
+                        print(f"ERROR: Library application failed: {message}")
                         session.close()
                         # Clean up created file
                         if file_path.exists():
                             file_path.unlink()
                         return False, f"Error applying library: {message}", None
+                    print(f"Library applied successfully: {stats}")
+                else:
+                    print(f"WARNING: Library '{starter_library_id}' not found")
             
             session.close()
+            print("Database session closed")
             
             # Create registry entry
+            print("Registering project...")
             registry_entry = ProjectRegistryEntry(
                 uuid=project_uuid,
                 name=name,
@@ -125,8 +144,10 @@ class WorkspaceService:
                 app_version=self.APP_VERSION
             )
             self.registry.add_project(registry_entry)
+            print("Project registered in registry")
             
             # Create active project
+            print("Opening workspace...")
             active_project = ActiveProject(
                 uuid=project_uuid,
                 name=name,
@@ -142,6 +163,8 @@ class WorkspaceService:
             
             # Set as active project
             ProjectContext.set_active_project(active_project)
+            print(f"Project '{name}' created and opened successfully")
+            print("=== Project Creation Complete ===\n")
             
             return True, f"Project '{name}' created successfully", active_project
             
