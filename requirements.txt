@@ -1,3 +1,4 @@
+# Streamlit >= 1.36.0 required for st.Page and st.navigation APIs
 streamlit==1.39.0
 sqlalchemy==2.0.36
 pandas==2.2.3
