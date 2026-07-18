@@ -1,6 +1,8 @@
 import streamlit as st
+import os
 
 from database.schema import get_session, get_engine
+from services.project_context import ProjectContext
 from signal_center.signal_dashboard import SignalDashboard
 from signal_center.sensor_models import SensorStatus, SignalPriority
 
@@ -12,15 +14,25 @@ except ImportError:
     PLOTLY_AVAILABLE = False
     st.warning("⚠️ Plotly not available. Using standard metrics instead of gauges.")
 
-# Check for active project workspace
-if 'current_project' not in st.session_state or st.session_state['current_project'] is None:
+# Check for active project workspace using ProjectContext
+if not ProjectContext.has_active_project():
     st.warning("⚠️ Please open a project workspace first")
     st.info("Return to the home page to create or open a project workspace")
     st.stop()
 
-current_project = st.session_state['current_project']
-engine = get_engine(current_project)
+# Get active project from ProjectContext
+active_project = ProjectContext.get_active_project()
+
+# Log database connection details
+print(f"\n[SIGNAL CENTER] Database Connection:")
+print(f"  Project: {active_project.name}")
+print(f"  Database path: {os.path.abspath(active_project.file_path)}")
+
+# Create engine and session from active workspace
+engine = get_engine(active_project.file_path)
 session = get_session(engine)
+
+print(f"[SIGNAL CENTER] Session created, ready to query database")
 
 st.title("📡 Change Impact Signal Center")
 st.markdown("### What deserves your attention right now?")

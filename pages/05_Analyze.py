@@ -1,16 +1,21 @@
 import streamlit as st
+import os
 import pandas as pd
 from database.schema import get_session, get_engine, ProjectMetadata
+from services.project_context import ProjectContext
 from analysis.registry_analysis_engine import RegistryAnalysisEngine
 
-# Check for active project workspace
-if 'current_project' not in st.session_state or st.session_state['current_project'] is None:
+# Check for active project workspace using ProjectContext
+if not ProjectContext.has_active_project():
     st.warning("⚠️ Please open a project workspace first")
     st.info("Return to the home page to create or open a project workspace")
     st.stop()
 
-current_project = st.session_state['current_project']
-engine = get_engine(current_project)
+# Get active project from ProjectContext
+active_project = ProjectContext.get_active_project()
+print(f"\n[ANALYZE] Database: {os.path.abspath(active_project.file_path)}")
+
+engine = get_engine(active_project.file_path)
 session = get_session(engine)
 
 # Get project metadata
@@ -18,7 +23,7 @@ metadata = session.query(ProjectMetadata).first()
 
 st.title("📊 Analyze")
 st.markdown("### Registry Quality & Health Analysis")
-st.success(f"📁 **{current_project}**")
+st.success(f"📁 **{active_project.name}**")
 
 # Initialize Registry Analysis Engine
 with st.spinner("Analyzing registry..."):

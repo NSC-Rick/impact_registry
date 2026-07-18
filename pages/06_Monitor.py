@@ -1,18 +1,23 @@
 import streamlit as st
+import os
 import pandas as pd
 from datetime import datetime, timedelta
 from database.schema import init_db, get_session, get_engine, ProjectMetadata
 from services.repository import Repository
+from services.project_context import ProjectContext
 from services.analytics import AnalyticsService
 
-# Check for active project workspace
-if 'current_project' not in st.session_state or st.session_state['current_project'] is None:
+# Check for active project workspace using ProjectContext
+if not ProjectContext.has_active_project():
     st.warning("⚠️ Please open a project workspace first")
     st.info("Return to the home page to create or open a project workspace")
     st.stop()
 
-current_project = st.session_state['current_project']
-engine = get_engine(current_project)
+# Get active project from ProjectContext
+active_project = ProjectContext.get_active_project()
+print(f"\n[MONITOR] Database: {os.path.abspath(active_project.file_path)}")
+
+engine = get_engine(active_project.file_path)
 session = get_session(engine)
 repo = Repository(session)
 analytics = AnalyticsService(session)
@@ -22,7 +27,7 @@ metadata = session.query(ProjectMetadata).first()
 
 st.title("📈 Monitor")
 st.markdown("### Track Progress and Coverage")
-st.success(f"📁 **{current_project}**")
+st.success(f"📁 **{active_project.name}**")
 
 impacts = repo.list_impacts()
 
