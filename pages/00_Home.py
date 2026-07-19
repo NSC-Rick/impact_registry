@@ -12,10 +12,11 @@ st.markdown("### Home")
 # Initialize workspace service
 workspace = WorkspaceService()
 
-# Discover projects on startup
-if 'projects_discovered' not in st.session_state:
-    workspace.discover_projects()
-    st.session_state['projects_discovered'] = True
+# Discover projects on every page load (filesystem-based discovery)
+# This ensures projects are always found after app restart
+discovered_count = workspace.discover_projects()
+if discovered_count > 0:
+    print(f"[HOME] Discovered {discovered_count} new project(s)")
 
 # Display current project info if active
 if ProjectContext.has_active_project():

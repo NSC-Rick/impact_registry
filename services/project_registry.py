@@ -208,6 +208,9 @@ class ProjectRegistry:
         """
         Discover .irp files in workspaces directory and add to registry.
         
+        Reads actual project metadata from each database to get correct UUID
+        and project information.
+        
         Args:
             workspaces_dir: Directory to scan for .irp files
             
@@ -229,25 +232,48 @@ class ProjectRegistry:
             if file_path in existing_paths:
                 continue
             
-            # Extract project name from filename
-            project_name = irp_file.stem
-            
-            # Create registry entry
-            import uuid as uuid_lib
-            entry = ProjectRegistryEntry(
-                uuid=str(uuid_lib.uuid4()),
-                name=project_name,
-                client="",
-                description="",
-                status="Pre-Implementation",
-                created_at=datetime.fromtimestamp(irp_file.stat().st_ctime).isoformat(),
-                last_modified=datetime.fromtimestamp(irp_file.stat().st_mtime).isoformat(),
-                last_opened=datetime.fromtimestamp(irp_file.stat().st_atime).isoformat(),
-                file_path=file_path,
-                app_version=self.APP_VERSION
-            )
-            
-            self.add_project(entry)
-            discovered += 1
+            # Try to read project metadata from database
+            try:
+                from database.schema import get_engine, get_session, ProjectMetadata
+                from sqlalchemy import inspect
+                
+                # Verify database has valid schema
+                engine = get_engine(file_path)
+                inspector = inspect(engine)
+                tables = inspector.get_table_names()
+                
+                if 'project_metadata' not in tables:
+                    print(f"[DISCOVERY] Skipping {irp_file.name} - no project_metadata table")
+                    continue
+                
+                # Read project metadata
+                session = get_session(engine)
+                metadata = session.query(ProjectMetadata).first()
+                session.close()
+                
+                if metadata:
+                    # Use actual project data from database
+                    entry = ProjectRegistryEntry(
+                        uuid=metadata.project_uuid,
+                        name=metadata.project_name,
+                        client=metadata.client_name or "",
+                        description=metadata.description or "",
+                        status=metadata.status or "Pre-Implementation",
+                        created_at=metadata.created_at.isoformat() if metadata.created_at else datetime.fromtimestamp(irp_file.stat().st_ctime).isoformat(),
+                        last_modified=metadata.updated_at.isoformat() if metadata.updated_at else datetime.fromtimestamp(irp_file.stat().st_mtime).isoformat(),
+                        last_opened=datetime.fromtimestamp(irp_file.stat().st_atime).isoformat(),
+                        file_path=file_path,
+                        app_version=metadata.registry_version or self.APP_VERSION
+                    )
+                    
+                    self.add_project(entry)
+                    discovered += 1
+                    print(f"[DISCOVERY] Found project: {metadata.project_name} ({metadata.project_uuid})")
+                else:
+                    print(f"[DISCOVERY] Skipping {irp_file.name} - no metadata found")
+                    
+            except Exception as e:
+                print(f"[DISCOVERY] Error reading {irp_file.name}: {e}")
+                continue
         
         return discovered
