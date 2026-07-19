@@ -41,21 +41,32 @@ class StarterLibraryService:
     
     def list_libraries(self) -> List[StarterLibrary]:
         """
-        List all available starter libraries.
+        List all available starter libraries in deterministic order.
+        
+        Libraries are sorted by display order (if defined) then by name.
         
         Returns:
-            List of StarterLibrary objects
+            List of StarterLibrary objects sorted by display order
         """
         libraries = []
         libraries_path = Path(self.LIBRARIES_DIR)
         
-        for json_file in libraries_path.glob("*.json"):
+        # Collect all library files first
+        json_files = sorted(libraries_path.glob("*.json"))  # Sort filenames for consistency
+        
+        for json_file in json_files:
             try:
                 library = self.load_library(json_file.stem)
                 if library:
                     libraries.append(library)
             except Exception as e:
                 print(f"Error loading library {json_file}: {e}")
+        
+        # Sort by display_order (if present) then by name for deterministic ordering
+        libraries.sort(key=lambda lib: (
+            getattr(lib, 'display_order', 999),  # Libraries without display_order go last
+            lib.name.lower()  # Case-insensitive alphabetical as secondary sort
+        ))
         
         return libraries
     

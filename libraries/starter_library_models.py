@@ -93,6 +93,7 @@ class StarterLibrary:
     version: str = "1.0"
     created_at: str = ""
     updated_at: str = ""
+    display_order: int = 999  # Lower numbers appear first, 999 = default/unordered
     
     # Enterprise Assets
     stakeholder_groups: List[LibraryStakeholderGroup] = field(default_factory=list)
@@ -131,6 +132,7 @@ class StarterLibrary:
             version=data.get('version', '1.0'),
             created_at=data.get('created_at', ''),
             updated_at=data.get('updated_at', ''),
+            display_order=data.get('display_order', 999),
             stakeholder_groups=stakeholder_groups,
             organization_units=organization_units,
             business_processes=business_processes,
