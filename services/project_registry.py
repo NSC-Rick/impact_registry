@@ -24,6 +24,8 @@ from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass, asdict
 
+from config import Config
+
 
 @dataclass
 class ProjectRegistryEntry:
@@ -57,20 +59,16 @@ class ProjectRegistry:
     Registry persists across application restarts.
     """
     
-    REGISTRY_FILE = "project_registry.json"
-    APP_VERSION = "1.0.0"
-    
     def __init__(self, registry_path: Optional[str] = None):
         """
         Initialize project registry.
         
         Args:
-            registry_path: Path to registry file. Defaults to workspaces directory.
+            registry_path: Path to registry file. Defaults to configured workspace directory.
         """
         if registry_path is None:
-            workspaces_dir = Path("workspaces")
-            workspaces_dir.mkdir(exist_ok=True)
-            registry_path = workspaces_dir / self.REGISTRY_FILE
+            Config.ensure_workspace_exists()
+            registry_path = Config.get_registry_path()
         
         self.registry_path = Path(registry_path)
         self._ensure_registry_exists()
@@ -204,7 +202,7 @@ class ProjectRegistry:
         """
         return self.update_project(uuid, last_opened=datetime.utcnow().isoformat())
     
-    def discover_projects(self, workspaces_dir: str = "workspaces") -> int:
+    def discover_projects(self, workspaces_dir: Optional[str] = None) -> int:
         """
         Discover .irp files in workspaces directory and add to registry.
         
@@ -212,12 +210,16 @@ class ProjectRegistry:
         and project information.
         
         Args:
-            workspaces_dir: Directory to scan for .irp files
+            workspaces_dir: Directory to scan for .irp files. Defaults to Config.WORKSPACE_ROOT
             
         Returns:
             Number of projects discovered
         """
-        workspaces_path = Path(workspaces_dir)
+        if workspaces_dir is None:
+            workspaces_path = Config.get_workspace_path()
+        else:
+            workspaces_path = Path(workspaces_dir)
+            
         if not workspaces_path.exists():
             return 0
         
@@ -263,7 +265,7 @@ class ProjectRegistry:
                         last_modified=metadata.updated_at.isoformat() if metadata.updated_at else datetime.fromtimestamp(irp_file.stat().st_mtime).isoformat(),
                         last_opened=datetime.fromtimestamp(irp_file.stat().st_atime).isoformat(),
                         file_path=file_path,
-                        app_version=metadata.registry_version or self.APP_VERSION
+                        app_version=metadata.registry_version or Config.APP_VERSION
                     )
                     
                     self.add_project(entry)

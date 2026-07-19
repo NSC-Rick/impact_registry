@@ -18,6 +18,7 @@ from services.project_context import ProjectContext, ActiveProject
 from services.project_registry import ProjectRegistry, ProjectRegistryEntry
 from services.workspace_validator import WorkspaceValidator
 from services.workspace_initializer import WorkspaceInitializer
+from config import Config
 
 
 class WorkspaceService:
@@ -32,17 +33,20 @@ class WorkspaceService:
     - Close
     """
     
-    WORKSPACES_DIR = "workspaces"
-    APP_VERSION = "1.0.0"
-    
     def __init__(self):
         """Initialize workspace service"""
         self.registry = ProjectRegistry()
-        self._ensure_workspaces_dir()
+        Config.ensure_workspace_exists()
     
-    def _ensure_workspaces_dir(self) -> None:
-        """Ensure workspaces directory exists"""
-        Path(self.WORKSPACES_DIR).mkdir(exist_ok=True)
+    @property
+    def WORKSPACES_DIR(self) -> str:
+        """Get workspace directory from config"""
+        return Config.WORKSPACE_ROOT
+    
+    @property
+    def APP_VERSION(self) -> str:
+        """Get app version from config"""
+        return Config.APP_VERSION
     
     def create_new_project(
         self,

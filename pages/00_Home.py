@@ -16,7 +16,15 @@ workspace = WorkspaceService()
 # This ensures projects are always found after app restart
 discovered_count = workspace.discover_projects()
 if discovered_count > 0:
-    print(f"[HOME] Discovered {discovered_count} new project(s)")
+    print(f"\n[HOME] Discovered {discovered_count} new project(s)")
+
+# Log all loaded projects
+all_projects = workspace.registry.list_projects()
+if all_projects:
+    print(f"\nLoaded Projects ({len(all_projects)}):")
+    for project in all_projects:
+        print(f"  ✓ {project.name}")
+    print()
 
 # Display current project info if active
 if ProjectContext.has_active_project():

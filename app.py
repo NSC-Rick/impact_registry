@@ -5,6 +5,19 @@ Defines explicit navigation architecture and launches the application.
 Replaces Streamlit's automatic page discovery with controlled navigation.
 """
 import streamlit as st
+from config import Config
+
+# Print startup diagnostics to console
+Config.print_startup_diagnostics()
+
+# Validate workspace on startup
+is_valid, message = Config.validate_workspace()
+if not is_valid:
+    st.error("⚠️ **Persistent Workspace Storage Unavailable**")
+    st.error(message)
+    st.warning("Projects cannot be saved until storage is available.")
+    st.info("Please check deployment configuration and ensure persistent disk is mounted.")
+    st.stop()
 
 # Configure application
 st.set_page_config(

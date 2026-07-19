@@ -8,14 +8,16 @@ services:
     startCommand: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0
     
     # Persistent disk for workspace storage
-    # Mounts to /opt/render/project/src/workspaces on Render
+    # Mounts to /var/data/workspaces (matches WORKSPACE_ROOT env var)
     disk:
       name: impact-registry-workspaces
-      mountPath: /opt/render/project/src/workspaces
+      mountPath: /var/data/workspaces
       sizeGB: 1
     
     # Environment variables
     envVars:
+      - key: WORKSPACE_ROOT
+        value: /var/data/workspaces
       - key: STREAMLIT_SERVER_HEADLESS
         value: true
       - key: STREAMLIT_SERVER_ENABLE_CORS
