@@ -27,7 +27,27 @@ openpyxl==3.1.5
 
 ### Deployment Steps
 
-#### 1. Create New Web Service
+#### Option A: Deploy with render.yaml (Recommended)
+
+**This repository includes `render.yaml` for automatic configuration.**
+
+1. Log in to Render Dashboard
+2. Click "New +" → "Blueprint"
+3. Connect to GitHub repository: `NSC-Rick/impact_registry`
+4. Render will automatically detect `render.yaml` and configure:
+   - Web service with Python runtime
+   - Persistent disk mounted at `/workspaces`
+   - Environment variables
+   - Build and start commands
+5. Click "Apply" to deploy
+
+**Persistent Disk:**
+- **Name:** `impact-registry-workspaces`
+- **Mount Path:** `/opt/render/project/src/workspaces`
+- **Size:** 1GB (expandable)
+- **Cost:** ~$0.25/month
+
+#### Option B: Manual Configuration (Alternative)
 
 1. Log in to Render Dashboard
 2. Click "New +" → "Web Service"
@@ -40,16 +60,18 @@ openpyxl==3.1.5
    - **Runtime:** Python 3
    - **Build Command:** `pip install -r requirements.txt`
    - **Start Command:** `streamlit run app.py --server.port=$PORT --server.address=0.0.0.0`
+5. Add Persistent Disk:
+   - Go to "Disks" tab
+   - Click "Add Disk"
+   - **Name:** `impact-registry-workspaces`
+   - **Mount Path:** `/opt/render/project/src/workspaces`
+   - **Size:** 1GB
+6. Add Environment Variables:
+   - `STREAMLIT_SERVER_HEADLESS=true`
+   - `STREAMLIT_SERVER_ENABLE_CORS=false`
+   - `STREAMLIT_BROWSER_GATHER_USAGE_STATS=false`
 
-#### 2. Environment Variables
-
-No environment variables required for basic deployment.
-
-Optional:
-- `STREAMLIT_SERVER_HEADLESS=true`
-- `STREAMLIT_SERVER_ENABLE_CORS=false`
-
-#### 3. Deploy
+#### Deploy
 
 1. Click "Create Web Service"
 2. Render will automatically:
@@ -173,12 +195,39 @@ impact_registry/
 3. Commit and push to GitHub
 4. Render auto-deploys from `main` branch
 
+### Data Persistence
+
+**Persistent Disk Configuration:**
+
+The `render.yaml` file configures a persistent disk that ensures all project workspaces survive:
+- ✅ Application restarts
+- ✅ Code deployments
+- ✅ Service scaling
+- ✅ Container rebuilds
+
+**What Gets Persisted:**
+- All `.irp` workspace files in `workspaces/` directory
+- Project databases (SQLite)
+- Project metadata
+- All impact registry data
+
+**What Doesn't Persist (Ephemeral):**
+- Application code (redeployed from GitHub)
+- Python dependencies (reinstalled on deploy)
+- Temporary files
+- Session state
+
 ### Database Backup
 
-SQLite database is stored in application directory. For production:
+**Automatic Persistence:**
+- Persistent disk provides automatic data retention
+- No manual backup needed for basic use
+
+**Recommended for Production:**
+- Export projects regularly via Monitor workspace
+- Download `.irp` files as backups
 - Consider PostgreSQL for multi-user deployments
-- Implement regular backup strategy
-- Export data regularly via Monitor workspace
+- Implement automated backup strategy for critical data
 
 ## Production Recommendations
 
